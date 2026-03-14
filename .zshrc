@@ -125,7 +125,7 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
-. /Users/mabino/homebrew/opt/asdf/libexec/asdf.sh
+eval "$(mise activate zsh)"
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -155,3 +155,5 @@ function brew() {
   
   return $EXIT_CODE
 }
+eval "$(zoxide init zsh)"
+source <(fzf --zsh)

@@ -80,3 +80,4 @@ DerivedData/
 .vscode/
 *.sublime-project
 *.sublime-workspace
+.ssh/config_local

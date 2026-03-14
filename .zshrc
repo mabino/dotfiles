@@ -128,3 +128,30 @@ unset __conda_setup
 . /Users/mabino/homebrew/opt/asdf/libexec/asdf.sh
 
 export PATH="$HOME/.local/bin:$PATH"
+
+# Homebrew + Yadm Automation
+# Automatically updates and pushes Brewfile when packages change
+function brew() {
+  command brew "$@"
+  local EXIT_CODE=$?
+  
+  # Only sync if the command was successful and modified the package list
+  if [[ $EXIT_CODE -eq 0 ]]; then
+    case "$1" in
+      install|uninstall|tap|untap|upgrade|cleanup)
+        echo "Updating Brewfile and syncing with yadm..."
+        command brew bundle dump --force --file=~/.Brewfile
+        yadm add ~/.Brewfile
+        # Only commit if there are actual changes
+        if ! yadm diff --cached --quiet; then
+          yadm commit -m "Auto-update Brewfile after brew $1"
+          yadm push
+        else
+          echo "No changes in Brewfile detected."
+        fi
+        ;;
+    esac
+  fi
+  
+  return $EXIT_CODE
+}

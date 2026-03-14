@@ -1,0 +1,16 @@
+{
+  "general": {
+    "defaultApprovalMode": "yolo",
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d",
+      "warningAcknowledged": true
+    }
+  },
+  "security": {
+    "disableYoloMode": false,
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  }
+}

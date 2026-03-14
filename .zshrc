@@ -157,3 +157,21 @@ function brew() {
 }
 eval "$(zoxide init zsh)"
 source <(fzf --zsh)
+
+# mise automation
+# Automatically updates and pushes .tool-versions when versions change
+function mise() {
+  command mise "$@"
+  local EXIT_CODE=$?
+  if [[ $EXIT_CODE -eq 0 && "$1" == "use" && "$2" == "--global" ]]; then
+    echo "Updating .tool-versions and syncing with yadm..."
+    yadm add ~/.tool-versions
+    if ! yadm diff --cached --quiet; then
+      yadm commit -m "Auto-update .tool-versions after mise $1"
+      yadm push
+    else
+      echo "No changes in .tool-versions detected."
+    fi
+  fi
+  return $EXIT_CODE
+}

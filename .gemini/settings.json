@@ -12,5 +12,8 @@
     "auth": {
       "selectedType": "oauth-personal"
     }
+  },
+  "ui": {
+    "hideBanner": true
   }
 }

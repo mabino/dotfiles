@@ -175,3 +175,8 @@ function mise() {
   fi
   return $EXIT_CODE
 }
+
+# Gemini CLI Authentication
+export NODE_EXTRA_CA_CERTS=$(python3 -m certifi)
+export NODE_USE_SYSTEM_CA=1
+

@@ -1,6 +1,6 @@
 {
   "general": {
-    "defaultApprovalMode": "yolo",
+    "defaultApprovalMode": "plan",
     "sessionRetention": {
       "enabled": true,
       "maxAge": "30d",

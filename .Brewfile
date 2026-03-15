@@ -1,4 +1,6 @@
 brew "certifi"
+brew "fzf"
 brew "gemini-cli"
 brew "mise"
 brew "yadm"
+brew "zoxide"

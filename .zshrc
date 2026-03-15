@@ -179,3 +179,4 @@ function mise() {
 export NODE_EXTRA_CA_CERTS=$(python3 -m certifi)
 export NODE_USE_SYSTEM_CA=1
 
+\n# Load SSH keys from macOS Keychain\nssh-add --apple-load-keychain 2>/dev/null

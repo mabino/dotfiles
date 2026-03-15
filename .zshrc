@@ -156,7 +156,6 @@ function brew() {
   return $EXIT_CODE
 }
 eval "$(zoxide init zsh)"
-source <(fzf --zsh)
 
 # mise automation
 # Automatically updates and pushes .tool-versions when versions change

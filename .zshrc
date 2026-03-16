@@ -179,4 +179,8 @@ function mise() {
 export NODE_EXTRA_CA_CERTS=$(python3 -m certifi)
 export NODE_USE_SYSTEM_CA=1
 
-\n# Load SSH keys from macOS Keychain\nssh-add --apple-load-keychain 2>/dev/null
+# Load SSH keys from macOS Keychain
+
+ssh-add --apple-load-keychain 2>/dev/null
+
+alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"

@@ -158,18 +158,18 @@ function brew() {
 eval "$(zoxide init zsh)"
 
 # mise automation
-# Automatically updates and pushes .tool-versions when versions change
+# Automatically updates and pushes config.toml when versions change
 function mise() {
   command mise "$@"
   local EXIT_CODE=$?
   if [[ $EXIT_CODE -eq 0 && "$1" == "use" && "$2" == "--global" ]]; then
-    echo "Updating .tool-versions and syncing with yadm..."
-    yadm add ~/.tool-versions
+    echo "Updating ~/.config/mise/config.toml and syncing with yadm..."
+    yadm add ~/.config/mise/config.toml
     if ! yadm diff --cached --quiet; then
-      yadm commit -m "Auto-update .tool-versions after mise $1"
+      yadm commit -m "Auto-update mise config.toml after mise $1"
       yadm push
     else
-      echo "No changes in .tool-versions detected."
+      echo "No changes in config.toml detected."
     fi
   fi
   return $EXIT_CODE

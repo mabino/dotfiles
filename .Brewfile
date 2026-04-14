@@ -1,8 +1,10 @@
+brew "bats-core"
 brew "certifi"
 brew "colima", restart_service: :changed
 brew "docker"
 brew "docker-buildx"
 brew "docker-compose"
+brew "dosbox-x"
 brew "ffmpeg"
 brew "gemini-cli"
 brew "gh"

@@ -5,7 +5,8 @@
       "enabled": true,
       "maxAge": "30d",
       "warningAcknowledged": true
-    }
+    },
+    "vimMode": true
   },
   "security": {
     "disableYoloMode": false,

@@ -1,5 +1,6 @@
-brew "bats-core"
 brew "certifi"
+brew "ansible"
+brew "bats-core"
 brew "colima", restart_service: :changed
 brew "docker"
 brew "docker-buildx"

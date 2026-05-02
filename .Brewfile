@@ -9,7 +9,7 @@ brew "dosbox-x"
 brew "ffmpeg"
 brew "flarectl"
 brew "gastown"
-brew "gemini-cli"
+brew "gemini-cli", link: false
 brew "gh"
 brew "ghostscript"
 brew "links"

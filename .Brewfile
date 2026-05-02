@@ -1,3 +1,4 @@
+brew "ca-certificates"
 brew "certifi"
 brew "openssl@3"
 brew "ansible"

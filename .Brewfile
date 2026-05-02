@@ -11,7 +11,7 @@ brew "dosbox-x"
 brew "ffmpeg"
 brew "flarectl"
 brew "gastown"
-brew "gemini-cli", link: false
+brew "gemini-cli"
 brew "gh"
 brew "ghostscript"
 brew "links"

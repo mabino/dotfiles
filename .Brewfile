@@ -3,6 +3,7 @@ brew "certifi"
 brew "openssl@3"
 brew "ansible"
 brew "bats-core"
+brew "cloudflare-cli4"
 brew "colima", restart_service: :changed
 brew "docker"
 brew "docker-buildx"

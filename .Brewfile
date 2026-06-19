@@ -20,6 +20,8 @@ brew "docker"
 brew "docker-buildx"
 # Isolated development environments using Docker
 brew "docker-compose"
+# SDL2 compatibility layer that uses SDL3 behind the scenes
+brew "sdl2-compat"
 # DOSBox with accurate emulation and wide testing
 brew "dosbox-x"
 # Play, record, convert, and stream select audio and video codecs

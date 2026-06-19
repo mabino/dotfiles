@@ -10,6 +10,8 @@ brew "ansible"
 brew "bats-core"
 # CLI for Cloudflare API v4
 brew "cloudflare-cli4"
+# Cross-platform make
+brew "cmake"
 # Container runtimes on MacOS (and Linux) with minimal setup
 brew "colima", restart_service: :changed
 # Pack, ship and run any application as a lightweight container

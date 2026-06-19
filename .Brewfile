@@ -58,8 +58,6 @@ brew "yt-dlp"
 brew "zoxide"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
-# Virtual Audio Driver
-cask "blackhole-2ch"
 # Terminal-based AI coding assistant
 cask "claude-code"
 # Brings the power of Copilot coding agent directly to your terminal

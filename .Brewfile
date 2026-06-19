@@ -44,6 +44,8 @@ brew "mise"
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
+# Display and control your Android device
+brew "scrcpy"
 # Terminal multiplexer
 brew "tmux"
 # Executes a program periodically, showing output fullscreen

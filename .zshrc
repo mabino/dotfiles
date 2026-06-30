@@ -78,3 +78,7 @@ function mise() {
 
 # --- Aliases ---
 alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"
+
+# Ollama Qwen Server Shortcuts
+alias start-qwen-server="/Users/mabino/.pi/agent/start_ollama.sh"
+alias stop-qwen-server="/Users/mabino/.pi/agent/stop_ollama.sh"

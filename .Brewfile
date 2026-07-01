@@ -36,14 +36,20 @@ brew "gemini-cli"
 brew "gh"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
+# CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
+brew "googleworkspace-cli"
 # Lynx-like WWW browser that supports tables, menus, etc.
 brew "links"
 # CLI for the Linode API
 brew "linode-cli"
+# LLM inference in C/C++
+brew "llama.cpp"
 # Create and manage Apple Silicon-native virtual machines
 brew "lume"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
+# Create, run, and share large language models (LLMs)
+brew "ollama"
 # Multi-agent orchestration framework for autonomous AI task completion
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
@@ -72,3 +78,4 @@ cask "copilot-cli"
 cask "gcloud-cli"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
+npm "@earendil-works/pi-coding-agent"

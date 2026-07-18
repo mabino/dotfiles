@@ -82,3 +82,5 @@ alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' 
 # Ollama Qwen Server Shortcuts
 alias start-qwen-server="/Users/mabino/.pi/agent/start_ollama.sh"
 alias stop-qwen-server="/Users/mabino/.pi/agent/stop_ollama.sh"
+export PATH="/Users/mabino/homebrew/opt/rustup/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"

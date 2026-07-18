@@ -56,6 +56,8 @@ brew "ralph-orchestrator"
 brew "ripgrep"
 # Safe, concurrent, practical language
 brew "rust"
+# Rust toolchain installer
+brew "rustup"
 # Display and control your Android device
 brew "scrcpy"
 # Terminal multiplexer

@@ -54,6 +54,8 @@ brew "ollama"
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
+# Safe, concurrent, practical language
+brew "rust"
 # Display and control your Android device
 brew "scrcpy"
 # Terminal multiplexer
@@ -78,4 +80,5 @@ cask "copilot-cli"
 cask "gcloud-cli"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
+cargo "sb2gs-cli"
 npm "@earendil-works/pi-coding-agent"

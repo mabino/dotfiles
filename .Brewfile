@@ -1,4 +1,4 @@
-tap "stupside/tap"
+tap "stupside/tap", trusted: { casks: ["castor"] }
 # Mozilla CA certificate store
 brew "ca-certificates"
 # Mozilla CA bundle for Python
@@ -75,8 +75,6 @@ brew "yt-dlp"
 brew "zoxide"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
-# Cast video streams to networked devices
-cask "stupside/tap/castor", trusted: true
 # Terminal-based AI coding assistant
 cask "claude-code"
 # Brings the power of Copilot coding agent directly to your terminal

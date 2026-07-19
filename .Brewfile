@@ -1,3 +1,4 @@
+tap "stupside/tap"
 # Mozilla CA certificate store
 brew "ca-certificates"
 # Mozilla CA bundle for Python
@@ -74,6 +75,8 @@ brew "yt-dlp"
 brew "zoxide"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
+# Cast video streams to networked devices
+cask "stupside/tap/castor", trusted: true
 # Terminal-based AI coding assistant
 cask "claude-code"
 # Brings the power of Copilot coding agent directly to your terminal
@@ -82,5 +85,6 @@ cask "copilot-cli"
 cask "gcloud-cli"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
+cargo "goboscript"
 cargo "sb2gs-cli"
 npm "@earendil-works/pi-coding-agent"

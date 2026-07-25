@@ -37,6 +37,8 @@ brew "gemini-cli"
 brew "gh"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
+# Open source programming language to build simple/reliable/efficient software
+brew "go"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
 # Lynx-like WWW browser that supports tables, menus, etc.

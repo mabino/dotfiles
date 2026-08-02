@@ -34,31 +34,69 @@ unset __conda_setup
 ssh-add --apple-load-keychain 2>/dev/null
 
 # --- Yadm Automation Helpers ---
+# Ensure the Brewfile union merge driver is registered in this machine's
+# yadm repo (pairs with .gitattributes: `.Brewfile merge=brewfile-union`)
+function _yadm_ensure_merge_driver() {
+  if ! yadm gitconfig --get merge.brewfile-union.driver >/dev/null 2>&1; then
+    yadm gitconfig merge.brewfile-union.name "Union merge for Brewfiles"
+    yadm gitconfig merge.brewfile-union.driver "$HOME/.local/bin/brewfile-reconcile git-merge %O %A %B"
+  fi
+}
+
 # Internal helper to sync specific files with yadm
 function _yadm_sync() {
   local file="$1"
   local msg="$2"
+  _yadm_ensure_merge_driver
   yadm add "$file"
-  if ! yadm diff --cached --quiet; then
-    yadm commit -m "$msg"
-    yadm push
-  else
+  if yadm diff --cached --quiet; then
     echo "No changes in ${file##*/} detected."
+    return 0
+  fi
+  yadm commit -m "$msg"
+  if ! yadm push --quiet 2>/dev/null; then
+    echo "Remote has new commits; rebasing and retrying push..."
+    if yadm pull --rebase --autostash --quiet && yadm push --quiet; then
+      echo "Synced after rebase."
+    else
+      yadm rebase --abort 2>/dev/null
+      echo "yadm sync needs manual attention: run 'yadm pull --rebase' and resolve conflicts." >&2
+      return 1
+    fi
   fi
 }
 
 # --- Tool Wrappers ---
 
-# Brew wrapper to sync Brewfile on change
+# Brew wrapper to reconcile and sync the Brewfile on change. The Brewfile is
+# the union of packages across machines: a fresh dump is merged with the
+# latest pulled Brewfile so other machines' packages are never dropped, and
+# uninstalled packages are removed explicitly.
 function brew() {
   command brew "$@"
   local EXIT_CODE=$?
   if [[ $EXIT_CODE -eq 0 ]]; then
     case "$1" in
-      install|uninstall|tap|untap|upgrade|cleanup)
+      install|uninstall|remove|rm|tap|untap|upgrade|cleanup)
         echo "Updating Brewfile and syncing with yadm..."
-        command brew bundle dump --force --file=~/.Brewfile
-        _yadm_sync ~/.Brewfile "Auto-update Brewfile after brew $1"
+        _yadm_ensure_merge_driver
+        yadm pull --rebase --autostash --quiet 2>/dev/null
+        local dump_file
+        dump_file="$(mktemp)"
+        command brew bundle dump --force --file="$dump_file"
+        local -a remove_args=()
+        if [[ "$1" == (uninstall|remove|rm|untap) ]]; then
+          local arg
+          for arg in "${@:2}"; do
+            [[ "$arg" == -* ]] || remove_args+=(--remove "$arg")
+          done
+        fi
+        if "$HOME/.local/bin/brewfile-reconcile" union "$dump_file" "$HOME/.Brewfile" "${remove_args[@]}" -o "$HOME/.Brewfile"; then
+          _yadm_sync ~/.Brewfile "Auto-update Brewfile after brew $1"
+        else
+          echo "Brewfile reconcile failed; ~/.Brewfile left untouched and not synced." >&2
+        fi
+        rm -f "$dump_file"
         ;;
     esac
   fi

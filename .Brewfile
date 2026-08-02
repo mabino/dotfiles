@@ -1,3 +1,5 @@
+# GitHub command-line tool
+brew "gh"
 # Tool to unpack installers created by Inno Setup
 brew "innoextract"
 # Yet Another Dotfiles Manager

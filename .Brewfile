@@ -1,3 +1,5 @@
+# Tool to unpack installers created by Inno Setup
+brew "innoextract"
 # Yet Another Dotfiles Manager
 brew "yadm"
 # Terminal interface for Antigravity agents

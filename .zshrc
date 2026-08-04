@@ -13,7 +13,11 @@ plugins=(git)
 source "$ZSH/oh-my-zsh.sh"
 
 # --- Tool Initializations ---
-eval "$($HOME/.homebrew/bin/brew shellenv)"
+# Homebrew lives at ~/.homebrew (preferred); fall back for machines not yet migrated
+for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew; do
+  if [[ -x $_brew ]]; then eval "$($_brew shellenv)"; break; fi
+done
+unset _brew
 eval "$(zoxide init zsh)"
 eval "$(mise activate zsh)"
 
@@ -120,5 +124,5 @@ alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' 
 # Ollama Qwen Server Shortcuts
 alias start-qwen-server="/Users/mabino/.pi/agent/start_ollama.sh"
 alias stop-qwen-server="/Users/mabino/.pi/agent/stop_ollama.sh"
-export PATH="$HOME/.homebrew/opt/rustup/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/rustup/bin:$PATH"
 export PATH="$HOME/.cargo/bin:$PATH"

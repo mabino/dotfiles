@@ -13,9 +13,18 @@ plugins=(git)
 source "$ZSH/oh-my-zsh.sh"
 
 # --- Tool Initializations ---
-# Homebrew lives at ~/.homebrew (preferred); fall back for machines not yet migrated
+# Homebrew lives at ~/.homebrew (preferred); fall back for machines not yet migrated.
+# Clear stale env inherited from a shell that predates a prefix move, otherwise
+# `brew shellenv` assumes it is already configured and emits nothing.
+if [[ -n $HOMEBREW_PREFIX && ! -x $HOMEBREW_PREFIX/bin/brew ]]; then
+  unset HOMEBREW_PREFIX HOMEBREW_CELLAR HOMEBREW_REPOSITORY
+fi
 for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew; do
-  if [[ -x $_brew ]]; then eval "$($_brew shellenv)"; break; fi
+  if [[ -x $_brew ]]; then
+    eval "$($_brew shellenv)"
+    [[ ":$PATH:" == *":${_brew%/brew}:"* ]] || export PATH="${_brew%/brew}:$PATH"
+    break
+  fi
 done
 unset _brew
 eval "$(zoxide init zsh)"

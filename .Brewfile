@@ -15,6 +15,8 @@ brew "cloudflare-cli4"
 brew "cmake"
 # Container runtimes on MacOS (and Linux) with minimal setup
 brew "colima", restart_service: :changed
+# TIFF library and utilities
+brew "libtiff"
 # Pack, ship and run any application as a lightweight container
 brew "docker"
 # Docker CLI plugin for extended build capabilities with BuildKit

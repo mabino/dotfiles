@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Global git hook dispatcher.
+#
+# Installed via `git config --global core.hooksPath ~/.config/git/hooks`.
+# Because core.hooksPath makes git look ONLY here for every hook, this script
+# is symlinked to each standard hook name. It (a) applies any global behavior
+# for that hook, then (b) chains to the repo-local hook of the same name so
+# per-project hooks (linters, etc.) keep working.
+set -euo pipefail
+
+hook_name="$(basename "$0")"
+
+# --- Global behavior: scrub AI/agent attribution from commit messages -------
+if [ "$hook_name" = "commit-msg" ] && [ -n "${1:-}" ] && [ -f "$1" ]; then
+  msg_file="$1"
+  before="$(wc -l <"$msg_file" | tr -d ' ')"
+
+  # Drop attribution lines. Human "Co-authored-by:" lines are preserved;
+  # only ones naming an AI/agent are removed.
+  perl -i -ne '
+    next if /Contributed-by/i;
+    next if /Generated with/i;
+    next if /Assisted-by/i;
+    next if /noreply\@anthropic\.com/i;
+    next if /\x{1F916}/;                       # robot emoji
+    next if /^\s*Co-authored-by:.*(claude|anthropic|cursor|copilot|chatgpt|gpt-|\bgpt\b|gemini|codeium|aider|devin|windsurf|\bbot\b)/i;
+    next if /^\s*(🤖\s*)?Generated with \[?Claude/i;
+    print;
+  ' "$msg_file"
+
+  # Collapse 3+ blank lines to one; trim trailing whitespace to a single newline.
+  perl -0777 -i -pe 's/\n{3,}/\n\n/g; s/\s+\z/\n/' "$msg_file"
+
+  after="$(wc -l <"$msg_file" | tr -d ' ')"
+  if [ "$before" != "$after" ]; then
+    echo "commit-msg: stripped agent attribution line(s) from commit message." >&2
+  fi
+fi
+
+# --- Chain to the repo-local hook of the same name --------------------------
+git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null || true)"
+if [ -n "$git_dir" ]; then
+  local_hook="$git_dir/hooks/$hook_name"
+  # Guard against calling ourselves if a repo points its hooks dir back here.
+  if [ -x "$local_hook" ] && [ "$(cd "$(dirname "$local_hook")" && pwd)/$hook_name" != "$(cd "$(dirname "$0")" && pwd)/$hook_name" ]; then
+    exec "$local_hook" "$@"
+  fi
+fi
+
+exit 0

@@ -27,8 +27,8 @@ for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
   fi
 done
 unset _brew
-eval "$(zoxide init zsh)"
-eval "$(mise activate zsh)"
+# Activate mise only if installed (manages per-project runtime versions via .tool-versions).
+command -v mise >/dev/null && eval "$(mise activate zsh)"
 
 # Conda Initialization
 __conda_setup="$('/Users/mabino/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"

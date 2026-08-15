@@ -45,6 +45,8 @@ brew "git-filter-repo"
 brew "go"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
+# Tool to unpack installers created by Inno Setup
+brew "innoextract"
 # Lynx-like WWW browser that supports tables, menus, etc.
 brew "links"
 # CLI for the Linode API
@@ -81,8 +83,6 @@ brew "yadm"
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
-# Tool to unpack installers created by Inno Setup
-brew "innoextract"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
 # Terminal-based AI coding assistant

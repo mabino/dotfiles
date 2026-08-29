@@ -5,3 +5,9 @@
 	email = mabino@gmail.com
 [core]
 	hooksPath = ~/.config/git/hooks
+[credential "https://github.com"]
+	helper = 
+	helper = !/Users/mabino/.homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/Users/mabino/.homebrew/bin/gh auth git-credential

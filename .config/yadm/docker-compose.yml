@@ -1,0 +1,6 @@
+services:
+  test:
+    build:
+      context: ../..
+      dockerfile: .config/yadm/Dockerfile
+    command: ["python3", "-m", "unittest", "discover", "-s", "/root/.config/yadm/tests"]

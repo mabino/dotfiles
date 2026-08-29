@@ -44,7 +44,12 @@ fi
 unset __conda_setup
 
 # --- SSH Configuration ---
-ssh-add --apple-load-keychain 2>/dev/null
+# Reconcile device-specific SSH identities and load saved passphrases from Keychain
+if command -v ssh-reconcile >/dev/null 2>&1; then
+  ssh-reconcile load
+else
+  ssh-add --apple-load-keychain 2>/dev/null
+fi
 
 # --- Yadm Automation Helpers ---
 # Ensure the Brewfile union merge driver is registered in this machine's

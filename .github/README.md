@@ -28,7 +28,7 @@ brew install yadm
    ```bash
    yadm clone <your-repository-url>
    ```
-2. (Optional) If the repository includes a bootstrap script (`~/.yadm/bootstrap`), `yadm clone` will prompt you to run it. If you want to run it manually later:
+2. (Optional) If the repository includes a bootstrap script (`~/.config/yadm/bootstrap`), `yadm clone` will prompt you to run it. If you want to run it manually later:
    ```bash
    yadm bootstrap
    ```

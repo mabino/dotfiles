@@ -10,11 +10,13 @@ To maintain a "Single Source of Truth" across multiple AI assistants (Claude, Ge
 - **Symlinks**: 
   - `~/.claude/CLAUDE.md` -> `~/.AGENT.md`
   - `~/.gemini/GEMINI.md` -> `~/.AGENT.md`
+  - `~/.copilot/copilot-instructions.md` -> `~/.AGENT.md`
 - **Benefit**: Update your preferences once in `~/.AGENT.md`, and every AI assistant instantly inherits the changes.
 
 ### 📦 Homebrew Automation
 The `brew` command is wrapped in `~/.zshrc`. 
 - **Auto-Sync**: Any `install`, `uninstall`, or `upgrade` automatically triggers a `brew bundle dump` to `~/.Brewfile`.
+- **Union Merge Driver**: Custom `brewfile-reconcile` driver prevents package loss across multiple machines.
 - **Auto-Commit**: If changes are detected, `yadm` automatically commits and pushes the updated `Brewfile` to GitHub.
 
 ### 🛠 Runtime Management (mise)
@@ -30,6 +32,16 @@ To handle multiple devices with unique private keys safely and persist passphras
   - `ssh-reconcile enroll`: Prompts for the passphrase once per machine and permanently stores it in macOS Keychain with `ssh-add --apple-use-keychain`.
   - `ssh-reconcile load`: Called on shell startup in `~/.zshrc` to ensure `config_local` is synced and keys are loaded via `ssh-add --apple-load-keychain`.
   - `ssh-reconcile status`: Inspects local keys, agent status, and keychain enrollment state.
+
+### 🪝 Yadm Lifecycle Hooks
+Automated hooks in `~/.config/yadm/hooks/`:
+- **`post_pull`**: Automatically triggers `ssh-reconcile sync`, verifies the Brewfile merge driver, and refreshes AI symlinks upon pulling updates.
+- **`post_clone`**: Automatically triggers `~/.config/yadm/bootstrap` on initial clone.
+
+### 🧪 Containerized Testing & CI
+All dotfiles tools (`brewfile-reconcile`, `ssh-reconcile`) include a full unit test suite:
+- **Local & Container Runner**: Execute locally via `python3 -m unittest discover ~/.config/yadm/tests` or containerized via `~/.config/yadm/run_tests_container.sh`.
+- **GitHub Actions**: Automated CI workflow (`.github/workflows/ci.yml`) runs tests on Linux in Docker on every push/PR.
 
 ### 🔍 Search & Navigation
 - **`fzf`**: Fuzzy finder for files, history, and processes.
@@ -51,4 +63,7 @@ yadm bootstrap
 # Check SSH key status or enroll new keys
 ssh-reconcile status
 ssh-reconcile enroll
+
+# Run test suite in Docker
+~/.config/yadm/run_tests_container.sh
 ```

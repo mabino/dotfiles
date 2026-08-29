@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ~/.config/yadm/hooks/post_pull
+# Executed automatically by yadm after a successful pull or merge.
+
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$PATH"
+
+# 1. Ensure union merge driver for Brewfile remains configured
+if command -v yadm >/dev/null 2>&1; then
+  if ! yadm gitconfig --get merge.brewfile-union.driver >/dev/null 2>&1; then
+    yadm gitconfig merge.brewfile-union.name "Union merge for Brewfiles"
+    yadm gitconfig merge.brewfile-union.driver "$HOME/.local/bin/brewfile-reconcile git-merge %O %A %B"
+  fi
+fi
+
+# 2. Re-sync SSH configuration for local machine
+if command -v ssh-reconcile >/dev/null 2>&1; then
+  ssh-reconcile sync >/dev/null 2>&1 || true
+fi
+
+# 3. Ensure AI assistant symlinks exist
+mkdir -p "$HOME/.claude" "$HOME/.gemini"
+[[ -L "$HOME/.claude/CLAUDE.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.claude/CLAUDE.md"
+[[ -L "$HOME/.gemini/GEMINI.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.gemini/GEMINI.md"
+
+exit 0

@@ -1,13 +1,26 @@
 # This is Git's per-user configuration file.
 [user]
-# Please adapt and uncomment the following lines:
 	name = Michael Bino
 	email = mabino@gmail.com
 [core]
 	hooksPath = ~/.config/git/hooks
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+	autostash = true
+[push]
+	autoSetupRemote = true
+[rerere]
+	enabled = true
+	autoupdate = true
+[diff]
+	algorithm = histogram
+[merge]
+	conflictstyle = zdiff3
 [credential "https://github.com"]
 	helper = 
-	helper = !/Users/mabino/.homebrew/bin/gh auth git-credential
+	helper = !gh auth git-credential
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/Users/mabino/.homebrew/bin/gh auth git-credential
+	helper = !gh auth git-credential

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# ~/.config/yadm/hooks/post_clone
+# Executed automatically by yadm after a successful clone.
+
+set -euo pipefail
+
+BOOTSTRAP="$HOME/.config/yadm/bootstrap"
+if [[ -x "$BOOTSTRAP" ]]; then
+  exec "$BOOTSTRAP"
+fi
+
+exit 0

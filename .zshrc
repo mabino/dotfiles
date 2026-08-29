@@ -31,17 +31,21 @@ unset _brew
 command -v mise >/dev/null && eval "$(mise activate zsh)"
 
 # Conda Initialization
-__conda_setup="$('/Users/mabino/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/mabino/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/mabino/miniconda3/etc/profile.d/conda.sh"
+for _conda_root in "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/.miniconda" /opt/homebrew/Caskroom/miniconda; do
+  if [[ -x "$_conda_root/bin/conda" ]]; then
+    __conda_setup="$("$_conda_root/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+      eval "$__conda_setup"
+    elif [ -f "$_conda_root/etc/profile.d/conda.sh" ]; then
+      . "$_conda_root/etc/profile.d/conda.sh"
     else
-        export PATH="/Users/mabino/miniconda3/bin:$PATH"
+      export PATH="$_conda_root/bin:$PATH"
     fi
-fi
-unset __conda_setup
+    unset __conda_setup
+    break
+  fi
+done
+unset _conda_root
 
 # --- SSH Configuration ---
 # Reconcile device-specific SSH identities and load saved passphrases from Keychain
@@ -136,7 +140,7 @@ function mise() {
 alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"
 
 # Ollama Qwen Server Shortcuts
-alias start-qwen-server="/Users/mabino/.pi/agent/start_ollama.sh"
-alias stop-qwen-server="/Users/mabino/.pi/agent/stop_ollama.sh"
-export PATH="$HOMEBREW_PREFIX/opt/rustup/bin:$PATH"
-export PATH="$HOME/.cargo/bin:$PATH"
+alias start-qwen-server="$HOME/.pi/agent/start_ollama.sh"
+alias stop-qwen-server="$HOME/.pi/agent/stop_ollama.sh"
+[[ -n "$HOMEBREW_PREFIX" && -d "$HOMEBREW_PREFIX/opt/rustup/bin" ]] && export PATH="$HOMEBREW_PREFIX/opt/rustup/bin:$PATH"
+[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"

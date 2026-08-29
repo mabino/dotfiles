@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """ssh-reconcile - Automated SSH key discovery, config_local reconciliation,
-
 and macOS Keychain integration for portable dotfiles across machines.
 """
 
@@ -160,7 +159,6 @@ def generate_config_local_content(keys: List[Path], ssh_dir: Optional[Path] = No
         lines.append("# No device-specific private keys discovered in ~/.ssh")
     else:
         for k in keys:
-            # Use ~/.ssh/ relative syntax if inside ~/.ssh, otherwise full path
             try:
                 rel = k.relative_to(target_dir)
                 identity_path = f"~/.ssh/{rel}"
@@ -254,23 +252,6 @@ def get_loaded_agent_fingerprints() -> Set[str]:
     return fingerprints
 
 
-def is_key_in_apple_keychain(key_path: Path) -> bool:
-    """Check if macOS Keychain has a stored passphrase for the key."""
-    if sys.platform != "darwin":
-        return False
-
-    abs_path = str(key_path.resolve())
-    try:
-        res = subprocess.run(
-            ["security", "find-generic-password", "-s", "SSH", "-a", abs_path],
-            capture_output=True,
-            timeout=3,
-        )
-        return res.returncode == 0
-    except Exception:
-        return False
-
-
 def load_apple_keychain() -> Tuple[bool, str]:
     """Execute ssh-add --apple-load-keychain on macOS."""
     if sys.platform != "darwin":
@@ -287,6 +268,14 @@ def load_apple_keychain() -> Tuple[bool, str]:
         return res.returncode == 0, output
     except Exception as e:
         return False, str(e)
+
+
+def is_key_loaded_or_enrolled(key_path: Path, agent_fps: Optional[Set[str]] = None) -> bool:
+    """Check if key is loaded in ssh-agent (which includes Keychain-loaded keys on macOS)."""
+    if agent_fps is None:
+        agent_fps = get_loaded_agent_fingerprints()
+    fp = get_key_fingerprint(key_path)
+    return bool(fp and fp in agent_fps)
 
 
 def enroll_key_in_keychain(key_path: Path) -> Tuple[bool, str]:
@@ -307,21 +296,23 @@ def enroll_key_in_keychain(key_path: Path) -> Tuple[bool, str]:
 def inspect_key_status(key_path: Path, agent_fps: Set[str]) -> Dict[str, object]:
     """Inspect complete state of an individual private key."""
     fp = get_key_fingerprint(key_path)
-    in_agent = bool(fp and fp in agent_fps)
-    in_keychain = is_key_in_apple_keychain(key_path) if sys.platform == "darwin" else None
+    is_active = bool(fp and fp in agent_fps)
 
     return {
         "path": str(key_path),
         "name": key_path.name,
         "fingerprint": fp or "unknown",
-        "in_agent": in_agent,
-        "in_keychain": in_keychain,
+        "loaded_in_agent": is_active,
+        "enrolled_in_keychain": is_active if sys.platform == "darwin" else None,
     }
 
 
 def cmd_status(args: argparse.Namespace) -> int:
     """Report complete status of SSH keys, ssh-agent, and macOS Keychain."""
     changed, keys, config_path = sync_config_local(dry_run=True)
+    if sys.platform == "darwin":
+        load_apple_keychain()
+
     agent_fps = get_loaded_agent_fingerprints()
     auth_sock = os.environ.get("SSH_AUTH_SOCK", "")
 
@@ -358,24 +349,24 @@ def cmd_status(args: argparse.Namespace) -> int:
     for st in key_statuses:
         name = st["name"]
         fp = st["fingerprint"]
-        agent_str = "✅ Loaded in Agent" if st["in_agent"] else "❌ Not in Agent"
+        is_loaded = st["loaded_in_agent"]
         if sys.platform == "darwin":
-            kc_str = "✅ Stored in Keychain" if st["in_keychain"] else "❌ Not in Keychain"
+            status_str = "✅ Active (Loaded from Keychain)" if is_loaded else "❌ Not in Keychain / Agent"
             print(f"  • {name} [{fp}]")
-            print(f"    - Agent:    {agent_str}")
-            print(f"    - Keychain: {kc_str}")
-            if not st["in_keychain"]:
+            print(f"    - Status:   {status_str}")
+            if not is_loaded:
                 all_ready = False
         else:
-            print(f"  • {name} [{fp}]: {agent_str}")
-            if not st["in_agent"]:
+            status_str = "✅ Loaded in Agent" if is_loaded else "❌ Not in Agent"
+            print(f"  • {name} [{fp}]: {status_str}")
+            if not is_loaded:
                 all_ready = False
 
     print()
     if all_ready:
-        print("✨ All local SSH keys are properly configured and enrolled!")
+        print("✨ All local SSH keys are properly configured and enrolled in Keychain!")
     else:
-        print("💡 Some keys are not enrolled in Keychain. Run 'ssh-reconcile enroll' to save passphrases.")
+        print("💡 Some keys are not active. Run 'ssh-reconcile enroll' to save passphrases to Keychain.")
 
     return 0
 
@@ -399,18 +390,10 @@ def cmd_load(args: argparse.Namespace) -> int:
     if sys.platform == "darwin":
         load_apple_keychain()
 
-    # If any keys exist, check if they are enrolled/loaded
+    # If any keys exist, check if they are loaded in agent
     if keys:
         agent_fps = get_loaded_agent_fingerprints()
-        unenrolled: List[Path] = []
-        for k in keys:
-            if sys.platform == "darwin":
-                if not is_key_in_apple_keychain(k):
-                    unenrolled.append(k)
-            else:
-                fp = get_key_fingerprint(k)
-                if not (fp and fp in agent_fps):
-                    unenrolled.append(k)
+        unenrolled = [k for k in keys if not is_key_loaded_or_enrolled(k, agent_fps)]
 
         if unenrolled and not getattr(args, "quiet", False):
             names = ", ".join(k.name for k in unenrolled)
@@ -424,6 +407,11 @@ def cmd_enroll(args: argparse.Namespace) -> int:
     sync_config_local()
     keys = discover_private_keys()
 
+    if sys.platform == "darwin":
+        load_apple_keychain()
+
+    agent_fps = get_loaded_agent_fingerprints()
+
     target_keys: List[Path] = []
     if getattr(args, "key", None):
         key_arg = Path(args.key).expanduser()
@@ -434,15 +422,13 @@ def cmd_enroll(args: argparse.Namespace) -> int:
             return 1
         target_keys = [key_arg]
     else:
-        # Default: enroll unenrolled keys or all discovered keys
         for k in keys:
-            if sys.platform == "darwin" and is_key_in_apple_keychain(k):
-                continue
-            target_keys.append(k)
+            if not is_key_loaded_or_enrolled(k, agent_fps):
+                target_keys.append(k)
 
         if not target_keys:
             if keys:
-                print("✅ All discovered keys are already stored in Keychain.")
+                print("✅ All discovered keys are already stored in Keychain and active in Agent.")
                 if getattr(args, "force", False):
                     target_keys = keys
                 else:
@@ -475,13 +461,14 @@ def cmd_setup(args: argparse.Namespace) -> int:
     if sys.platform == "darwin":
         load_apple_keychain()
 
+    agent_fps = get_loaded_agent_fingerprints()
+    unenrolled = [k for k in keys if not is_key_loaded_or_enrolled(k, agent_fps)]
+
     # Check interactive terminal for enrollment
     is_interactive = sys.stdin.isatty() and not getattr(args, "non_interactive", False)
-    if is_interactive and keys:
-        unenrolled = [k for k in keys if sys.platform == "darwin" and not is_key_in_apple_keychain(k)]
-        if unenrolled:
-            print(f"\nFound {len(unenrolled)} unenrolled key(s): {', '.join(k.name for k in unenrolled)}")
-            return cmd_enroll(args)
+    if is_interactive and unenrolled:
+        print(f"\nFound {len(unenrolled)} unenrolled key(s): {', '.join(k.name for k in unenrolled)}")
+        return cmd_enroll(args)
 
     return 0
 

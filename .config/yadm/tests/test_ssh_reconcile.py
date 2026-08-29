@@ -122,17 +122,17 @@ class SshReconcileTests(unittest.TestCase):
         key = self._create_file("test_id_ed25519", DUMMY_OPENSSH_KEY)
         with patch("sys.platform", "darwin"):
             with patch.object(mod, "get_key_fingerprint", return_value="SHA256:dummyfingerprint"):
-                with patch.object(mod, "is_key_in_apple_keychain", return_value=True):
-                    st = mod.inspect_key_status(key, {"SHA256:dummyfingerprint"})
-                    self.assertEqual(st["name"], "test_id_ed25519")
-                    self.assertEqual(st["fingerprint"], "SHA256:dummyfingerprint")
-                    self.assertTrue(st["in_agent"])
-                    self.assertTrue(st["in_keychain"])
+                st = mod.inspect_key_status(key, {"SHA256:dummyfingerprint"})
+                self.assertEqual(st["name"], "test_id_ed25519")
+                self.assertEqual(st["fingerprint"], "SHA256:dummyfingerprint")
+                self.assertTrue(st["loaded_in_agent"])
+                self.assertTrue(st["enrolled_in_keychain"])
 
         with patch("sys.platform", "linux"):
             with patch.object(mod, "get_key_fingerprint", return_value="SHA256:dummyfingerprint"):
                 st = mod.inspect_key_status(key, {"SHA256:dummyfingerprint"})
-                self.assertIsNone(st["in_keychain"])
+                self.assertTrue(st["loaded_in_agent"])
+                self.assertIsNone(st["enrolled_in_keychain"])
 
     def test_cli_subprocess_sync_and_status_json(self):
         self._create_file("test_box_id_ed25519", DUMMY_OPENSSH_KEY)

@@ -15,6 +15,15 @@ For silent / unattended automation:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --silent
 ```
 
+To clean up and reset / start over:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --reset
+```
+Or reset and reinstall in one shot:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --reinstall
+```
+
 ---
 
 ## 🛠 Key Features & Automations

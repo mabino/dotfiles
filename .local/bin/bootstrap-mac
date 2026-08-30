@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # ~/.local/bin/bootstrap-mac
-# Automated macOS bootstrap script for fresh machines or system repair.
+# Automated macOS bootstrap script for fresh machines, system repair, or full reset.
 # Deterministically names machines FYB-<SerialNumber>, generates matching ED25519 keys,
 # stores passphrases in Apple Keychain, uploads public keys to GitHub, and configures dotfiles.
 #
 # Usage on a fresh Mac:
 #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)"
+#
+# Reset / Start over:
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --reset
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --reinstall
 
 set -euo pipefail
 
@@ -46,11 +50,22 @@ SILENT=0
 SKIP_BREW=0
 SKIP_XCODE=0
 CUSTOM_KEY=""
+RESET_ENV=0
+REINSTALL=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -s|--silent|-y|--yes|--non-interactive)
       SILENT=1
+      shift
+      ;;
+    --reset|--clean|--uninstall)
+      RESET_ENV=1
+      shift
+      ;;
+    --reinstall)
+      RESET_ENV=1
+      REINSTALL=1
       shift
       ;;
     --skip-brew)
@@ -73,6 +88,8 @@ Automated bootstrap script for macOS development machines.
 
 Options:
   -s, --silent, -y, --yes     Run non-interactively (accepts all defaults)
+  --reset, --clean            Reset bootstrap environment (removes ~/.homebrew, /opt/homebrew, ~/.oh-my-zsh, etc.)
+  --reinstall                 Reset environment and immediately re-run full bootstrap
   --skip-brew                 Skip 'brew bundle' package installations
   --skip-xcode                Skip Xcode Command Line Tools verification
   --ssh-key-name <NAME>       Specify a custom SSH key filename
@@ -111,6 +128,49 @@ prompt_confirm() {
 
   [[ "$reply" =~ ^[Yy]$ ]] && return 0 || return 1
 }
+
+# --- Reset / Clean Functionality ---
+if [[ "$RESET_ENV" -eq 1 ]]; then
+  echo -e "${RED}${BOLD}======================================================${RESET}"
+  echo -e "${RED}${BOLD}🧹 macOS Bootstrap Environment Reset${RESET}"
+  echo -e "${RED}${BOLD}======================================================${RESET}"
+  echo
+
+  if ! prompt_confirm "${YELLOW}Are you sure you want to clean up bootstrap installations (~/.homebrew, ~/.oh-my-zsh, etc.)?${RESET}" 1; then
+    log_info "Reset canceled."
+    exit 0
+  fi
+
+  log_info "Removing Homebrew installations from ~/.homebrew..."
+  rm -rf "$HOME/.homebrew" "$HOME/homebrew" 2>/dev/null || true
+
+  if [[ -d "/opt/homebrew" ]]; then
+    log_info "Removing /opt/homebrew..."
+    sudo rm -rf /opt/homebrew 2>/dev/null || rm -rf /opt/homebrew 2>/dev/null || log_warn "Could not remove /opt/homebrew without sudo."
+  fi
+
+  log_info "Cleaning temporary installation artifacts..."
+  rm -rf /tmp/Homebrew* /tmp/homebrew* /tmp/.com.apple.dt.* 2>/dev/null || true
+
+  log_info "Removing Oh My Zsh (~/.oh-my-zsh)..."
+  rm -rf "$HOME/.oh-my-zsh" 2>/dev/null || true
+
+  log_info "Removing AI instruction symlinks..."
+  rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.gemini/GEMINI.md" "$HOME/.copilot/copilot-instructions.md" 2>/dev/null || true
+
+  log_info "Removing local SSH config_local..."
+  rm -f "$HOME/.ssh/config_local" 2>/dev/null || true
+
+  log_success "Reset complete. Environment is clean!"
+  echo
+
+  if [[ "$REINSTALL" -eq 0 ]]; then
+    echo -e "You can start fresh anytime by running: ${BOLD}bootstrap-mac${RESET}"
+    exit 0
+  fi
+  log_info "Proceeding with fresh reinstall..."
+  echo
+fi
 
 echo -e "${BOLD}======================================================${RESET}"
 echo -e "${BOLD}🚀 macOS Development Machine Bootstrap & Setup${RESET}"

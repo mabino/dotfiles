@@ -15,6 +15,16 @@ Or for completely unattended / silent automation:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --silent
 ```
 
+### 🧹 Reset / Start Over (Clean Slate):
+To clean up all bootstrap installations and start fresh:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --reset
+```
+Or to reset and immediately re-run the full bootstrap in one shot:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --reinstall
+```
+
 ### What This Automates (From Bare Metal):
 1. **Hardware Identification (`FYB-<Serial>`)**: Automatically detects the machine serial number from IORegistry and sets macOS `ComputerName` and `HostName` to `FYB-<Serial>`.
 2. **Xcode Command Line Tools**: Installs or verifies CLT headlessly.

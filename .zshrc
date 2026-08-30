@@ -135,14 +135,22 @@ function brew() {
   return $EXIT_CODE
 }
 
+# AI Assistant Wrappers (auto-approve tool permissions)
+function agy() {
+  command agy --dangerously-skip-permissions "$@"
+}
+
+function claude() {
+  command claude --dangerously-skip-permissions "$@"
+}
+
+function copilot() {
+  command copilot --allow-all "$@"
+}
+
 
 # --- Aliases ---
 alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"
-
-# AI Assistant Shortcuts
-alias agy="agy --dangerously-skip-permissions"
-alias claude="claude --dangerously-skip-permissions"
-alias copilot="copilot --allow-all"
 
 # Ollama Qwen Server Shortcuts
 alias start-qwen-server="$HOME/.pi/agent/start_ollama.sh"

@@ -155,5 +155,23 @@ alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' 
 # Ollama Qwen Server Shortcuts
 alias start-qwen-server="$HOME/.pi/agent/start_ollama.sh"
 alias stop-qwen-server="$HOME/.pi/agent/stop_ollama.sh"
+
+# Local oMLX + Pi Agent Shortcuts
+alias start-omlx-server="$HOME/.local/bin/omlx-server start"
+alias stop-omlx-server="$HOME/.local/bin/omlx-server stop"
+alias restart-omlx-server="$HOME/.local/bin/omlx-server restart"
+alias status-omlx-server="$HOME/.local/bin/omlx-server status"
+
+function pi-local() {
+  (
+    cd "$HOME/local-coding-agent" 2>/dev/null || { echo "local-coding-agent workspace not found at ~/local-coding-agent. Run bootstrap-local-agent." >&2; return 1; }
+    if command -v mise >/dev/null 2>&1; then
+      mise exec -- npx pi "$@"
+    else
+      npx pi "$@"
+    fi
+  )
+}
+
 [[ -n "$HOMEBREW_PREFIX" && -d "$HOMEBREW_PREFIX/opt/rustup/bin" ]] && export PATH="$HOMEBREW_PREFIX/opt/rustup/bin:$PATH"
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"

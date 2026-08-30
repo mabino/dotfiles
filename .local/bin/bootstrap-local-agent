@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+# ~/.local/bin/bootstrap-local-agent
+# Hardware-conditional bootstrap for oMLX + Pi local coding agent stack.
+# Target: Apple Silicon Macs with >= 128GB Unified Memory (e.g. M5 Max).
+#
+# Usage:
+#   bootstrap-local-agent [OPTIONS]
+#
+# Options:
+#   -s, --silent, -y, --yes    Run non-interactively (accepts all defaults)
+#   --force                    Bypass memory and architecture threshold checks
+#   --download-models          Automatically download model weights
+#   --skip-models              Skip model download prompt and step
+#   -h, --help                 Show help message
+
+set -euo pipefail
+
+# --- Color and Logging Helpers ---
+BOLD="\033[1m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+log_info()    { echo -e "${BLUE}${BOLD}==>${RESET} ${BOLD}$*${RESET}"; }
+log_success() { echo -e "${GREEN}${BOLD}✔${RESET} ${GREEN}$*${RESET}"; }
+log_warn()    { echo -e "${YELLOW}${BOLD}⚠${RESET} ${YELLOW}$*${RESET}"; }
+log_error()   { echo -e "${RED}${BOLD}✖${RESET} ${RED}$*${RESET}" >&2; }
+
+# --- Flags & Options ---
+SILENT=0
+FORCE=0
+DOWNLOAD_MODELS=""
+WORKSPACE_DIR="${LOCAL_AGENT_DIR:-$HOME/local-coding-agent}"
+MODELS_DIR="${OMLX_MODELS_DIR:-$HOME/.omlx/models}"
+MIN_MEM=137438953472 # 128 GB in bytes
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -s|--silent|-y|--yes|--non-interactive)
+      SILENT=1
+      shift
+      ;;
+    --force)
+      FORCE=1
+      shift
+      ;;
+    --download-models)
+      DOWNLOAD_MODELS=1
+      shift
+      ;;
+    --skip-models)
+      DOWNLOAD_MODELS=0
+      shift
+      ;;
+    -h|--help)
+      cat <<EOF
+Usage: bootstrap-local-agent [OPTIONS]
+
+Hardware-conditional bootstrap for oMLX + Pi local coding agent stack.
+
+Options:
+  -s, --silent, -y, --yes     Run non-interactively (accepts all defaults)
+  --force                     Bypass memory and architecture checks
+  --download-models           Download Qwen3-Coder target and draft models
+  --skip-models               Skip model downloads
+  -h, --help                  Show this help message
+EOF
+      exit 0
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+prompt_confirm() {
+  local prompt_msg="$1"
+  local default_yes="${2:-1}"
+
+  if [[ "$SILENT" -eq 1 ]]; then
+    return 0
+  fi
+
+  local prompt_suffix="[Y/n]"
+  [[ "$default_yes" -eq 0 ]] && prompt_suffix="[y/N]"
+
+  local reply=""
+  if [[ -c /dev/tty ]]; then
+    read -r -p "$(echo -e "${BOLD}${prompt_msg}${RESET} ${prompt_suffix} ")" reply </dev/tty
+  else
+    read -r -p "$(echo -e "${BOLD}${prompt_msg}${RESET} ${prompt_suffix} ")" reply || reply=""
+  fi
+
+  if [[ -z "$reply" ]]; then
+    [[ "$default_yes" -eq 1 ]] && return 0 || return 1
+  fi
+
+  [[ "$reply" =~ ^[Yy]$ ]] && return 0 || return 1
+}
+
+# --- Step 1: Hardware Capability Verification ---
+OS_TYPE="$(uname -s)"
+ARCH_TYPE="$(uname -m)"
+
+if [[ "$FORCE" -eq 0 ]]; then
+  if [[ "$OS_TYPE" != "Darwin" || "$ARCH_TYPE" != "arm64" ]]; then
+    log_info "Skipping local agent build: host is not Apple Silicon macOS ($OS_TYPE $ARCH_TYPE)."
+    exit 0
+  fi
+
+  MEM_BYTES="$(sysctl -n hw.memsize 2>/dev/null || echo 0)"
+  if (( MEM_BYTES < MIN_MEM )); then
+    MEM_GB=$(( MEM_BYTES / 1073741824 ))
+    log_info "Skipping local agent build: unified memory (${MEM_GB}GB) is below 128GB threshold."
+    exit 0
+  fi
+fi
+
+MEM_BYTES="$(sysctl -n hw.memsize 2>/dev/null || echo 0)"
+MEM_GB=$(( MEM_BYTES / 1073741824 ))
+log_info "High-memory Apple Silicon detected (${MEM_GB}GB Unified Memory)."
+
+if ! prompt_confirm "Deploy local oMLX + Pi coding agent stack on this machine?" 1; then
+  log_info "Skipping local coding agent deployment per user choice."
+  exit 0
+fi
+
+# --- Step 2: Ensure Homebrew oMLX Engine & mise ---
+if command -v brew >/dev/null 2>&1; then
+  if ! brew tap | grep -q "^jundot/omlx$" 2>/dev/null; then
+    log_info "Tapping jundot/omlx..."
+    brew tap jundot/omlx 2>/dev/null || true
+  fi
+
+  if ! command -v omlx >/dev/null 2>&1; then
+    log_info "Installing oMLX inference engine via Homebrew..."
+    brew install jundot/omlx/omlx --HEAD 2>/dev/null || brew install jundot/omlx/omlx 2>/dev/null || log_warn "oMLX formula installation encountered an issue."
+  else
+    log_success "oMLX engine active: $(command -v omlx)"
+  fi
+
+  if ! command -v mise >/dev/null 2>&1; then
+    log_info "Installing mise..."
+    brew install mise 2>/dev/null || true
+  fi
+fi
+
+# --- Step 3: Scaffold Sandboxed Workspace (~/local-coding-agent) ---
+log_info "Scaffolding isolated workspace at ${WORKSPACE_DIR}..."
+mkdir -p "$WORKSPACE_DIR"
+
+cat << 'EOF' > "$WORKSPACE_DIR/mise.toml"
+[tools]
+node = "20"
+python = "3.12"
+
+[env]
+OPENAI_API_BASE = "http://127.0.0.1:8000/v1"
+OPENAI_API_KEY = "omlx-local"
+OPENAI_MODEL = "Qwen3-Coder-30B-Instruct-4bit"
+EOF
+log_success "Created sandboxed ${WORKSPACE_DIR}/mise.toml"
+
+# --- Step 4: Install Sandboxed Runtimes & Pi Coding Agent ---
+if command -v mise >/dev/null 2>&1; then
+  log_info "Installing sandboxed Node.js 20 & Python 3.12 via mise..."
+  (
+    cd "$WORKSPACE_DIR"
+    mise install >/dev/null 2>&1 || true
+    log_info "Installing @earendil-works/pi-coding-agent into workspace..."
+    mise exec -- npm install --silent @earendil-works/pi-coding-agent 2>/dev/null || npm install --silent @earendil-works/pi-coding-agent 2>/dev/null || log_warn "npm install of pi-coding-agent completed with warnings."
+  )
+  log_success "Pi coding agent installed in ${WORKSPACE_DIR}"
+else
+  log_warn "mise is not in PATH. Please run 'mise install' inside ${WORKSPACE_DIR} after installation."
+fi
+
+# --- Step 5: Model Directory & Optional Ingestion ---
+mkdir -p "$MODELS_DIR"
+
+SHOULD_DOWNLOAD=0
+if [[ "$DOWNLOAD_MODELS" == "1" ]]; then
+  SHOULD_DOWNLOAD=1
+elif [[ "$DOWNLOAD_MODELS" == "0" ]]; then
+  SHOULD_DOWNLOAD=0
+else
+  if prompt_confirm "Download local MLX model weights (~19GB: Qwen3-Coder 30B 4-bit + 0.5B draft) now?" 1; then
+    SHOULD_DOWNLOAD=1
+  fi
+fi
+
+if [[ "$SHOULD_DOWNLOAD" -eq 1 ]]; then
+  log_info "Initiating model download into ${MODELS_DIR}..."
+  if [[ -x "$HOME/.local/bin/omlx-server" ]]; then
+    "$HOME/.local/bin/omlx-server" download || log_warn "Model download could not complete automatically. Run 'omlx-server download' anytime."
+  else
+    log_info "Target model: mlx-community/Qwen3-Coder-30B-Instruct-4bit"
+    log_info "Draft model:  mlx-community/Qwen3-Coder-0.5B-Instruct-4bit"
+    log_info "You can download weights via 'omlx-server download'."
+  fi
+else
+  log_info "Skipping model download. You can download model weights anytime via: ${BOLD}omlx-server download${RESET}"
+fi
+
+log_success "Local oMLX + Pi Agent stack configuration complete!"

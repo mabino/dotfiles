@@ -49,6 +49,7 @@ trap cleanup EXIT INT TERM HUP
 SILENT=0
 SKIP_BREW=0
 SKIP_XCODE=0
+SKIP_LOCAL_AGENT=0
 CUSTOM_KEY=""
 RESET_ENV=0
 REINSTALL=0
@@ -76,6 +77,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_XCODE=1
       shift
       ;;
+    --skip-local-agent)
+      SKIP_LOCAL_AGENT=1
+      shift
+      ;;
     --key|--ssh-key-name)
       CUSTOM_KEY="$2"
       shift 2
@@ -92,6 +97,7 @@ Options:
   --reinstall                 Reset environment and immediately re-run full bootstrap
   --skip-brew                 Skip 'brew bundle' package installations
   --skip-xcode                Skip Xcode Command Line Tools verification
+  --skip-local-agent          Skip local oMLX + Pi coding agent stack setup
   --ssh-key-name <NAME>       Specify a custom SSH key filename
   -h, --help                  Show this help message
 EOF
@@ -178,7 +184,7 @@ echo -e "${BOLD}======================================================${RESET}"
 echo
 
 # --- Step 1: Hardware Identification (FYB-<SerialNumber>) ---
-log_info "Step 1/8: Detecting hardware identification..."
+log_info "Step 1/9: Detecting hardware identification..."
 SERIAL="$(ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F'"' '/IOPlatformSerialNumber/{print $4}' || true)"
 if [[ -n "$SERIAL" ]]; then
   MACHINE_ID="FYB-${SERIAL}"
@@ -204,7 +210,7 @@ fi
 
 # --- Step 2: Xcode Command Line Tools ---
 if [[ "$SKIP_XCODE" -eq 0 && "$(uname -s)" == "Darwin" ]]; then
-  log_info "Step 2/8: Verifying Xcode Command Line Tools..."
+  log_info "Step 2/9: Verifying Xcode Command Line Tools..."
   if ! xcode-select -p >/dev/null 2>&1; then
     echo
     echo -e "${YELLOW}${BOLD}======================================================${RESET}"
@@ -241,7 +247,7 @@ if [[ "$SKIP_XCODE" -eq 0 && "$(uname -s)" == "Darwin" ]]; then
 fi
 
 # --- Step 3: Homebrew Installation & Environment ---
-log_info "Step 3/8: Verifying Homebrew environment..."
+log_info "Step 3/9: Verifying Homebrew environment..."
 _BREW_BIN=""
 for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
   if [[ -x "$_cand" ]]; then
@@ -272,7 +278,7 @@ if command -v brew >/dev/null 2>&1; then
 fi
 
 # --- Step 4: SSH Key Creation & Keychain Enrollment ---
-log_info "Step 4/8: Managing local SSH key & macOS Keychain integration..."
+log_info "Step 4/9: Managing local SSH key & macOS Keychain integration..."
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 
@@ -347,7 +353,7 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
 fi
 
 # --- Step 5: GitHub CLI (gh) & Public Key Registration ---
-log_info "Step 5/8: Registering SSH key with GitHub..."
+log_info "Step 5/9: Registering SSH key with GitHub..."
 if command -v gh >/dev/null 2>&1; then
   if ! gh auth status >/dev/null 2>&1; then
     if [[ -c /dev/tty && "$SILENT" -eq 0 ]]; then
@@ -368,7 +374,7 @@ if command -v gh >/dev/null 2>&1; then
 fi
 
 # --- Step 6: Yadm Installation & Dotfiles Clone ---
-log_info "Step 6/8: Managing Dotfiles via yadm..."
+log_info "Step 6/9: Managing Dotfiles via yadm..."
 DOTFILES_REPO="git@github.com:mabino/dotfiles.git"
 DOTFILES_HTTPS="https://github.com/mabino/dotfiles.git"
 
@@ -389,7 +395,7 @@ else
 fi
 
 # --- Step 7: Git Configuration, Hooks & SSH Reconciliation ---
-log_info "Step 7/8: Configuring Git hooks, merge driver & SSH config..."
+log_info "Step 7/9: Configuring Git hooks, merge driver & SSH config..."
 git config --global core.hooksPath "$HOME/.config/git/hooks"
 if command -v yadm >/dev/null 2>&1; then
   yadm gitconfig merge.brewfile-union.name "Union merge for Brewfiles"
@@ -421,9 +427,9 @@ else
   log_success "Oh My Zsh active: $HOME/.oh-my-zsh"
 fi
 
-# --- Step 8: Homebrew Package Bundle ---
+# --- Step 8: Homebrew Package Bundle & Mise ---
 if [[ "$SKIP_BREW" -eq 0 && -f "$HOME/.Brewfile" ]]; then
-  log_info "Step 8/8: Installing Homebrew packages & developer toolchains..."
+  log_info "Step 8/9: Installing Homebrew packages & developer toolchains..."
   if prompt_confirm "Run 'brew bundle --global' to install tracked packages and CLI tools?" 1; then
     brew bundle --global --verbose || log_warn "Some brew bundle packages may have encountered issues."
     log_success "Homebrew bundle installed."
@@ -431,13 +437,23 @@ if [[ "$SKIP_BREW" -eq 0 && -f "$HOME/.Brewfile" ]]; then
     log_info "Skipping brew bundle per user choice. Run 'brew bundle --global' anytime later."
   fi
 else
-  log_info "Step 8/8: Skipping Homebrew package bundle."
+  log_info "Step 8/9: Skipping Homebrew package bundle."
 fi
 
 # Mise runtime activation
 if command -v mise >/dev/null 2>&1; then
   log_info "Checking mise runtime versions..."
   mise install 2>/dev/null || true
+fi
+
+# --- Step 9: Local MLX Agent Stack (High-Memory Apple Silicon) ---
+if [[ "$SKIP_LOCAL_AGENT" -eq 0 && -x "$HOME/.local/bin/bootstrap-local-agent" ]]; then
+  log_info "Step 9/9: Evaluating local MLX coding agent stack eligibility..."
+  local_agent_args=()
+  [[ "$SILENT" -eq 1 ]] && local_agent_args+=(--silent)
+  "$HOME/.local/bin/bootstrap-local-agent" "${local_agent_args[@]}" || log_warn "Local agent bootstrap skipped or encountered issues."
+else
+  log_info "Step 9/9: Skipping local MLX coding agent stack."
 fi
 
 echo

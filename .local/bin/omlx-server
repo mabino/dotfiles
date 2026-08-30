@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# ~/.local/bin/omlx-server
+# Service controller for oMLX inference daemon with DFlash speculative decoding.
+# Pairs Qwen3-Coder-30B-Instruct-4bit target with Qwen3-Coder-0.5B-Instruct-4bit draft model.
+#
+# Usage:
+#   omlx-server {start|stop|restart|status|download|logs}
+
+set -euo pipefail
+
+BOLD="\033[1m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+log_info()    { echo -e "${BLUE}${BOLD}==>${RESET} ${BOLD}$*${RESET}"; }
+log_success() { echo -e "${GREEN}${BOLD}✔${RESET} ${GREEN}$*${RESET}"; }
+log_warn()    { echo -e "${YELLOW}${BOLD}⚠${RESET} ${YELLOW}$*${RESET}"; }
+log_error()   { echo -e "${RED}${BOLD}✖${RESET} ${RED}$*${RESET}" >&2; }
+
+OMLX_DIR="${OMLX_HOME:-$HOME/.omlx}"
+PID_FILE="$OMLX_DIR/omlx.pid"
+LOG_FILE="$OMLX_DIR/omlx.log"
+MODELS_DIR="$OMLX_DIR/models"
+PORT="${OMLX_PORT:-8000}"
+HOST="${OMLX_HOST:-127.0.0.1}"
+
+TARGET_MODEL="${OMLX_TARGET_MODEL:-mlx-community/Qwen3-Coder-30B-Instruct-4bit}"
+DRAFT_MODEL="${OMLX_DRAFT_MODEL:-mlx-community/Qwen3-Coder-0.5B-Instruct-4bit}"
+
+mkdir -p "$OMLX_DIR" "$MODELS_DIR"
+
+is_running() {
+  if [[ -f "$PID_FILE" ]]; then
+    local pid
+    pid="$(cat "$PID_FILE" 2>/dev/null || echo "")"
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  # Fallback: check if process is listening on port
+  if lsof -i "TCP:${PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+get_pid() {
+  if [[ -f "$PID_FILE" ]]; then
+    cat "$PID_FILE" 2>/dev/null || echo ""
+  else
+    lsof -i "TCP:${PORT}" -sTCP:LISTEN -t 2>/dev/null | head -n 1 || echo ""
+  fi
+}
+
+start_server() {
+  if is_running; then
+    local pid
+    pid="$(get_pid)"
+    log_warn "oMLX server is already running (PID: ${pid:-unknown}, Port: ${PORT})."
+    return 0
+  fi
+
+  log_info "Starting oMLX inference server with DFlash speculative decoding..."
+  log_info "  Target Model: ${TARGET_MODEL}"
+  log_info "  Draft Model:  ${DRAFT_MODEL}"
+  log_info "  Endpoint:     http://${HOST}:${PORT}/v1"
+
+  # Find oMLX binary or module
+  local OMLX_CMD=""
+  if command -v omlx >/dev/null 2>&1; then
+    OMLX_CMD="omlx"
+  elif command -v mlx_lm.server >/dev/null 2>&1; then
+    OMLX_CMD="mlx_lm.server"
+  elif command -v python3 >/dev/null 2>&1 && python3 -c "import mlx_lm" >/dev/null 2>&1; then
+    OMLX_CMD="python3 -m mlx_lm.server"
+  else
+    log_error "oMLX / MLX runtime not found. Run 'bootstrap-local-agent' or 'brew install jundot/omlx/omlx --HEAD'."
+    return 1
+  fi
+
+  # Launch in background with logging
+  nohup $OMLX_CMD \
+    --model "$TARGET_MODEL" \
+    --draft-model "$DRAFT_MODEL" \
+    --host "$HOST" \
+    --port "$PORT" \
+    >> "$LOG_FILE" 2>&1 &
+
+  local pid=$!
+  echo "$pid" > "$PID_FILE"
+  sleep 1
+
+  if kill -0 "$pid" 2>/dev/null; then
+    log_success "oMLX server started (PID: $pid). Logs: $LOG_FILE"
+  else
+    log_error "oMLX server failed to start. Inspect logs: $LOG_FILE"
+    rm -f "$PID_FILE"
+    return 1
+  fi
+}
+
+stop_server() {
+  if ! is_running; then
+    log_info "oMLX server is not running."
+    rm -f "$PID_FILE"
+    return 0
+  fi
+
+  local pid
+  pid="$(get_pid)"
+  log_info "Stopping oMLX server (PID: ${pid:-unknown})..."
+
+  if [[ -n "$pid" ]]; then
+    kill "$pid" 2>/dev/null || true
+    for _ in {1..10}; do
+      if ! kill -0 "$pid" 2>/dev/null; then
+        break
+      fi
+      sleep 0.5
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -9 "$pid" 2>/dev/null || true
+    fi
+  fi
+
+  rm -f "$PID_FILE"
+  log_success "oMLX server stopped."
+}
+
+status_server() {
+  if is_running; then
+    local pid
+    pid="$(get_pid)"
+    log_success "oMLX server is RUNNING (PID: ${pid:-unknown}, Port: ${PORT})"
+    echo -e "  • Target Model: ${BOLD}${TARGET_MODEL}${RESET}"
+    echo -e "  • Draft Model:  ${BOLD}${DRAFT_MODEL}${RESET}"
+    echo -e "  • Base URL:     ${BOLD}http://${HOST}:${PORT}/v1${RESET}"
+    echo -e "  • Log File:     ${LOG_FILE}"
+  else
+    log_info "oMLX server is STOPPED (Port ${PORT} free)."
+  fi
+}
+
+download_models() {
+  log_info "Downloading model weights into ${MODELS_DIR}..."
+  log_info "1/2: Target Model (${TARGET_MODEL})..."
+  if command -v hf >/dev/null 2>&1; then
+    hf download "$TARGET_MODEL" --local-dir "$MODELS_DIR/${TARGET_MODEL##*/}" || true
+  elif command -v huggingface-cli >/dev/null 2>&1; then
+    huggingface-cli download "$TARGET_MODEL" --local-dir "$MODELS_DIR/${TARGET_MODEL##*/}" || true
+  else
+    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${TARGET_MODEL}', local_dir='${MODELS_DIR}/${TARGET_MODEL##*/}')" 2>/dev/null || log_warn "Automated download requires huggingface_hub. Install via 'pip install huggingface_hub'."
+  fi
+
+  log_info "2/2: Draft Model (${DRAFT_MODEL})..."
+  if command -v hf >/dev/null 2>&1; then
+    hf download "$DRAFT_MODEL" --local-dir "$MODELS_DIR/${DRAFT_MODEL##*/}" || true
+  elif command -v huggingface-cli >/dev/null 2>&1; then
+    huggingface-cli download "$DRAFT_MODEL" --local-dir "$MODELS_DIR/${DRAFT_MODEL##*/}" || true
+  else
+    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${DRAFT_MODEL}', local_dir='${MODELS_DIR}/${DRAFT_MODEL##*/}')" 2>/dev/null || true
+  fi
+
+  log_success "Model download stage finished."
+}
+
+show_logs() {
+  if [[ -f "$LOG_FILE" ]]; then
+    tail -n 50 -f "$LOG_FILE"
+  else
+    log_warn "Log file $LOG_FILE does not exist yet."
+  fi
+}
+
+case "${1:-}" in
+  start)
+    start_server
+    ;;
+  stop)
+    stop_server
+    ;;
+  restart)
+    stop_server
+    sleep 1
+    start_server
+    ;;
+  status)
+    status_server
+    ;;
+  download)
+    download_models
+    ;;
+  logs|log)
+    show_logs
+    ;;
+  -h|--help|help|"")
+    cat <<EOF
+Usage: omlx-server {start|stop|restart|status|download|logs}
+
+Commands:
+  start      Start the oMLX inference server daemon in the background
+  stop       Stop the running oMLX daemon
+  restart    Restart the oMLX server
+  status     Show current daemon status and endpoint info
+  download   Download target and draft model weights into ~/.omlx/models
+  logs       Tail the oMLX server logs
+EOF
+    exit 0
+    ;;
+  *)
+    log_error "Unknown command: $1"
+    echo "Usage: omlx-server {start|stop|restart|status|download|logs}" >&2
+    exit 1
+    ;;
+esac

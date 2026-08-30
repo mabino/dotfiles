@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""Tests for bootstrap-local-agent and omlx-server scripts.
+
+Run with: python3 -m unittest discover ~/.config/yadm/tests
+"""
+
+import os
+import stat
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+BOOTSTRAP_SCRIPT = REPO_ROOT / ".local" / "bin" / "bootstrap-local-agent"
+OMLX_SCRIPT = REPO_ROOT / ".local" / "bin" / "omlx-server"
+
+
+class BootstrapLocalAgentTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.workspace_dir = os.path.join(self.temp_dir.name, "local-coding-agent")
+        self.models_dir = os.path.join(self.temp_dir.name, "models")
+        self.omlx_home = os.path.join(self.temp_dir.name, "omlx_home")
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_scripts_are_executable(self):
+        self.assertTrue(os.access(BOOTSTRAP_SCRIPT, os.X_OK))
+        self.assertTrue(os.access(OMLX_SCRIPT, os.X_OK))
+
+    def test_help_flag(self):
+        res = subprocess.run(
+            [str(BOOTSTRAP_SCRIPT), "--help"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertIn("Usage: bootstrap-local-agent", res.stdout)
+        self.assertIn("--silent", res.stdout)
+        self.assertIn("--force", res.stdout)
+
+    def test_omlx_server_help(self):
+        res = subprocess.run(
+            [str(OMLX_SCRIPT), "--help"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertIn("Usage: omlx-server", res.stdout)
+        self.assertIn("start", res.stdout)
+        self.assertIn("status", res.stdout)
+
+    def test_omlx_server_status_when_stopped(self):
+        env = dict(os.environ, OMLX_HOME=self.omlx_home, OMLX_PORT="59999")
+        res = subprocess.run(
+            [str(OMLX_SCRIPT), "status"],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=True,
+        )
+        self.assertIn("STOPPED", res.stdout)
+
+    def test_scaffolding_creates_mise_toml(self):
+        env = dict(
+            os.environ,
+            LOCAL_AGENT_DIR=self.workspace_dir,
+            OMLX_MODELS_DIR=self.models_dir,
+        )
+        res = subprocess.run(
+            [str(BOOTSTRAP_SCRIPT), "--force", "--silent", "--skip-models"],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=True,
+        )
+        self.assertEqual(res.returncode, 0)
+        mise_toml = os.path.join(self.workspace_dir, "mise.toml")
+        self.assertTrue(os.path.isfile(mise_toml))
+
+        with open(mise_toml, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        self.assertIn('node = "20"', content)
+        self.assertIn('python = "3.12"', content)
+        self.assertIn('OPENAI_API_BASE = "http://127.0.0.1:8000/v1"', content)
+        self.assertIn('OPENAI_API_KEY = "omlx-local"', content)
+        self.assertIn('OPENAI_MODEL = "Qwen3-Coder-30B-Instruct-4bit"', content)
+
+    def test_low_memory_skip(self):
+        # Create a mock bin directory with a sysctl wrapper reporting 16GB
+        mock_bin = os.path.join(self.temp_dir.name, "mock_bin")
+        os.makedirs(mock_bin, exist_ok=True)
+        sysctl_mock = os.path.join(mock_bin, "sysctl")
+        with open(sysctl_mock, "w", encoding="utf-8") as f:
+            f.write("#!/bin/sh\necho 17179869184\n")  # 16 GB
+        os.chmod(sysctl_mock, stat.S_IRWXU)
+
+        env = dict(
+            os.environ,
+            PATH=f"{mock_bin}:{os.environ.get('PATH', '')}",
+            LOCAL_AGENT_DIR=self.workspace_dir,
+        )
+        res = subprocess.run(
+            [str(BOOTSTRAP_SCRIPT), "--silent"],
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("below 128GB threshold", res.stdout)
+        # Ensure workspace was NOT scaffolded
+        self.assertFalse(os.path.exists(os.path.join(self.workspace_dir, "mise.toml")))
+
+
+if __name__ == "__main__":
+    unittest.main()

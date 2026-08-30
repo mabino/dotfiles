@@ -28,7 +28,7 @@ PORT="${OMLX_PORT:-8000}"
 HOST="${OMLX_HOST:-127.0.0.1}"
 
 TARGET_MODEL="${OMLX_TARGET_MODEL:-mlx-community/Qwen3.8-27B-4bit}"
-DRAFT_MODEL="${OMLX_DRAFT_MODEL:-mlx-community/Qwen3.8-27B-MTP-4bit}"
+DRAFT_MODEL="${OMLX_DRAFT_MODEL:-mlx-community/Qwen3-0.6B-4bit}"
 
 mkdir -p "$OMLX_DIR" "$MODELS_DIR"
 

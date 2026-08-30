@@ -92,7 +92,7 @@ class BootstrapLocalAgentTests(unittest.TestCase):
         with open(mise_toml, "r", encoding="utf-8") as f:
             content = f.read()
 
-        self.assertIn('node = "20"', content)
+        self.assertIn('node = "22"', content)
         self.assertIn('python = "3.12"', content)
         self.assertIn('OPENAI_API_BASE = "http://127.0.0.1:8000/v1"', content)
         self.assertIn('OPENAI_API_KEY = "omlx-local"', content)

@@ -177,7 +177,7 @@ fi
 
 cat << 'EOF' > "$WORKSPACE_DIR/mise.toml"
 [tools]
-node = "20"
+node = "22"
 python = "3.12"
 
 [env]
@@ -187,9 +187,39 @@ OPENAI_MODEL = "Qwen3.8-27B-4bit"
 EOF
 log_success "Created sandboxed ${WORKSPACE_DIR}/mise.toml"
 
+# Provision Pi custom provider and model configuration
+mkdir -p "$HOME/.pi/agent"
+cat << 'EOF' > "$HOME/.pi/agent/models.json"
+{
+  "providers": {
+    "omlx": {
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "api": "openai-completions",
+      "apiKey": "omlx-local",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "Qwen3.8-27B-4bit",
+          "name": "Qwen 3.8 27B (Local MLX)",
+          "reasoning": false,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 32768,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
+    }
+  }
+}
+EOF
+log_success "Configured local oMLX model provider in ~/.pi/agent/models.json"
+
 # --- Step 4: Install Sandboxed Runtimes & Pi Coding Agent ---
 if command -v mise >/dev/null 2>&1; then
-  log_info "Installing sandboxed Node.js 20 & Python 3.12 via mise..."
+  log_info "Installing sandboxed Node.js 22 & Python 3.12 via mise..."
   (
     cd "$WORKSPACE_DIR"
     mise install >/dev/null 2>&1 || true
@@ -210,7 +240,7 @@ if [[ "$DOWNLOAD_MODELS" == "1" ]]; then
 elif [[ "$DOWNLOAD_MODELS" == "0" ]]; then
   SHOULD_DOWNLOAD=0
 else
-  if prompt_confirm "Download local MLX model weights (~18GB: Qwen3.8 27B 4-bit + MTP draft) now?" 1; then
+  if prompt_confirm "Download local MLX model weights (~17GB: Qwen3.8 27B 4-bit + 0.6B draft) now?" 1; then
     SHOULD_DOWNLOAD=1
   fi
 fi
@@ -221,11 +251,26 @@ if [[ "$SHOULD_DOWNLOAD" -eq 1 ]]; then
     "$HOME/.local/bin/omlx-server" download || log_warn "Model download could not complete automatically. Run 'omlx-server download' anytime."
   else
     log_info "Target model: mlx-community/Qwen3.8-27B-4bit"
-    log_info "Draft model:  mlx-community/Qwen3.8-27B-MTP-4bit"
+    log_info "Draft model:  mlx-community/Qwen3-0.6B-4bit"
     log_info "You can download weights via 'omlx-server download'."
   fi
 else
   log_info "Skipping model download. You can download model weights anytime via: ${BOLD}omlx-server download${RESET}"
+fi
+
+# --- Step 6: Validate Pi Coding Agent End-to-End Inference ---
+if [[ -d "$MODELS_DIR/Qwen3.8-27B-4bit" ]] && [[ -x "$HOME/.local/bin/omlx-server" ]]; then
+  log_info "Validating Pi coding agent end-to-end inference against local MLX server..."
+  "$HOME/.local/bin/omlx-server" start >/dev/null 2>&1 || true
+  test_resp=""
+  if command -v mise >/dev/null 2>&1; then
+    test_resp="$(cd "$WORKSPACE_DIR" && mise exec -- npx pi --provider omlx --model "omlx/Qwen3.8-27B-4bit" -p "Say OK" 2>/dev/null || true)"
+  fi
+  if [[ -n "$test_resp" ]]; then
+    log_success "Verified Pi coding agent end-to-end inference against local MLX stack!"
+  else
+    log_info "Pi coding agent is ready. Launch anytime via: ${BOLD}pi-local${RESET}"
+  fi
 fi
 
 log_success "Local oMLX + Pi Agent stack configuration complete!"

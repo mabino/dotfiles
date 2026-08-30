@@ -172,20 +172,16 @@ for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
 done
 
 if [[ -z "$_BREW_BIN" ]]; then
-  log_info "Homebrew not found. Installing Homebrew non-interactively..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
-    if [[ -x "$_cand" ]]; then
-      _BREW_BIN="$_cand"
-      break
-    fi
-  done
+  log_info "Homebrew not found. Installing Homebrew directly into $HOME/.homebrew (no sudo/opt)..."
+  mkdir -p "$HOME/.homebrew"
+  curl -fsSL https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/.homebrew"
+  _BREW_BIN="$HOME/.homebrew/bin/brew"
 fi
 
 if [[ -n "$_BREW_BIN" ]]; then
   eval "$("$_BREW_BIN" shellenv)"
   export PATH="${_BREW_BIN%/brew}:$HOME/.local/bin:$PATH"
-  log_success "Homebrew active: $(command -v brew)"
+  log_success "Homebrew active: $(command -v brew) (Prefix: $("$_BREW_BIN" --prefix))"
 else
   log_warn "Homebrew could not be located in standard prefixes."
 fi

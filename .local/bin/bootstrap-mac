@@ -208,14 +208,14 @@ if [[ "$SKIP_XCODE" -eq 0 && "$(uname -s)" == "Darwin" ]]; then
   if ! xcode-select -p >/dev/null 2>&1; then
     log_info "Installing Xcode Command Line Tools..."
     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-    PROD=$(softwareupdate -l 2>/dev/null | grep -B 1 "Command Line Tools" | awk -F'*' '/^ *\*/ {print $2}' | sed -e 's/^ *//' | tr -d '\n' || true)
-    if [[ -n "$PROD" ]]; then
-      softwareupdate -i "$PROD" --verbose || xcode-select --install
-    else
-      xcode-select --install
-    fi
+    xcode-select --install 2>/dev/null || true
+    echo -e "${YELLOW}${BOLD}A macOS dialog has opened to install Xcode Command Line Tools.${RESET}"
+    echo -e "${YELLOW}Please click 'Install' on the dialog. Waiting for installation to complete...${RESET}"
+    until xcode-select -p >/dev/null 2>&1; do
+      sleep 4
+    done
     rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-    log_success "Xcode Command Line Tools installed."
+    log_success "Xcode Command Line Tools installed: $(xcode-select -p)"
   else
     log_success "Xcode Command Line Tools active: $(xcode-select -p)"
   fi
@@ -246,10 +246,21 @@ else
   log_warn "Homebrew could not be located in standard prefixes."
 fi
 
+# Ensure core CLI dependencies are present via Homebrew
+if command -v brew >/dev/null 2>&1; then
+  log_info "Ensuring core tools (git, gh, yadm) are installed..."
+  brew install git gh yadm >/dev/null 2>&1 || true
+fi
+
 # --- Step 4: SSH Key Creation & Keychain Enrollment ---
 log_info "Step 4/8: Managing local SSH key & macOS Keychain integration..."
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
+
+# Pre-seed github.com into known_hosts
+if ! grep -q "github.com" "$HOME/.ssh/known_hosts" 2>/dev/null; then
+  ssh-keyscan -t ed25519,rsa github.com 2>/dev/null >> "$HOME/.ssh/known_hosts" || true
+fi
 
 if [[ -n "$CUSTOM_KEY" ]]; then
   KEY_NAME="$CUSTOM_KEY"
@@ -318,11 +329,6 @@ fi
 
 # --- Step 5: GitHub CLI (gh) & Public Key Registration ---
 log_info "Step 5/8: Registering SSH key with GitHub..."
-if ! command -v gh >/dev/null 2>&1; then
-  log_info "Installing GitHub CLI (gh) via Homebrew..."
-  brew install gh >/dev/null 2>&1 || true
-fi
-
 if command -v gh >/dev/null 2>&1; then
   if ! gh auth status >/dev/null 2>&1; then
     if [[ -c /dev/tty && "$SILENT" -eq 0 ]]; then
@@ -344,23 +350,19 @@ fi
 
 # --- Step 6: Yadm Installation & Dotfiles Clone ---
 log_info "Step 6/8: Managing Dotfiles via yadm..."
-if ! command -v yadm >/dev/null 2>&1; then
-  log_info "Installing yadm via Homebrew..."
-  brew install yadm >/dev/null 2>&1
-fi
-
 DOTFILES_REPO="git@github.com:mabino/dotfiles.git"
 DOTFILES_HTTPS="https://github.com/mabino/dotfiles.git"
 
 if ! yadm rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   log_info "Cloning dotfiles repository..."
+  # Try SSH clone first
   if yadm clone "$DOTFILES_REPO" 2>/dev/null; then
     log_success "Cloned dotfiles via SSH."
   else
-    log_warn "SSH clone failed (key may not be uploaded yet). Cloning via HTTPS..."
+    log_info "Cloning dotfiles repository via HTTPS..."
     yadm clone "$DOTFILES_HTTPS"
     yadm remote set-url origin "$DOTFILES_REPO" 2>/dev/null || true
-    log_success "Cloned dotfiles via HTTPS (origin remote set to SSH)."
+    log_success "Cloned dotfiles (origin remote set to SSH)."
   fi
 else
   log_info "Existing yadm dotfiles repository detected. Pulling latest changes..."

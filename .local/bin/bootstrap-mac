@@ -425,7 +425,7 @@ fi
 if [[ "$SKIP_BREW" -eq 0 && -f "$HOME/.Brewfile" ]]; then
   log_info "Step 8/8: Installing Homebrew packages & developer toolchains..."
   if prompt_confirm "Run 'brew bundle --global' to install tracked packages and CLI tools?" 1; then
-    brew bundle --global || log_warn "Some brew bundle packages may have encountered issues."
+    brew bundle --global --verbose || log_warn "Some brew bundle packages may have encountered issues."
     log_success "Homebrew bundle installed."
   else
     log_info "Skipping brew bundle per user choice. Run 'brew bundle --global' anytime later."

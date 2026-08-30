@@ -267,8 +267,8 @@ fi
 
 # Ensure core CLI dependencies are present via Homebrew
 if command -v brew >/dev/null 2>&1; then
-  log_info "Ensuring core tools (git, gh, yadm) are installed..."
-  brew install git gh yadm >/dev/null 2>&1 || true
+  log_info "Ensuring core tools (git, gh, yadm, uv) are installed..."
+  brew install git gh yadm uv >/dev/null 2>&1 || true
 fi
 
 # --- Step 4: SSH Key Creation & Keychain Enrollment ---

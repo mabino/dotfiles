@@ -32,14 +32,10 @@ brew "docker-buildx"
 brew "docker-compose"
 # SDL2 compatibility layer that uses SDL3 behind the scenes
 brew "sdl2-compat"
-# DOSBox with accurate emulation and wide testing
-brew "dosbox-x"
 # CLI application for interacting with a Cloudflare account
 brew "flarectl"
 # Multi-agent workspace manager
 brew "gastown"
-# Interact with Google Gemini AI models from the command-line
-brew "gemini-cli"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
 # Quickly rewrite git repository history
@@ -72,6 +68,8 @@ brew "rustup"
 brew "scrcpy"
 # Terminal multiplexer
 brew "tmux"
+# Extremely fast Python package and project manager, written in Rust
+brew "uv"
 # Executes a program periodically, showing output fullscreen
 brew "watch"
 # Generate your Xcode project from a spec file and your folder structure
@@ -91,5 +89,3 @@ cask "ungoogled-chromium"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
 tap "stupside/tap", trusted: { casks: ["castor"] }
-cargo "goboscript", source: "https://github.com/aspizu/goboscript"
-cargo "sb2gs-cli", source: "https://github.com/aspizu/sb2gs"

@@ -81,10 +81,19 @@ start_server() {
     return 1
   fi
 
+  local model_arg="$TARGET_MODEL"
+  local draft_arg="$DRAFT_MODEL"
+  if [[ -d "$MODELS_DIR/${TARGET_MODEL##*/}" ]]; then
+    model_arg="$MODELS_DIR/${TARGET_MODEL##*/}"
+  fi
+  if [[ -d "$MODELS_DIR/${DRAFT_MODEL##*/}" ]]; then
+    draft_arg="$MODELS_DIR/${DRAFT_MODEL##*/}"
+  fi
+
   # Launch in background with logging
   nohup $OMLX_CMD \
-    --model "$TARGET_MODEL" \
-    --draft-model "$DRAFT_MODEL" \
+    --model "$model_arg" \
+    --draft-model "$draft_arg" \
     --host "$HOST" \
     --port "$PORT" \
     >> "$LOG_FILE" 2>&1 &

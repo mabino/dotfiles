@@ -54,6 +54,8 @@ brew "llama.cpp"
 brew "llvm"
 # Create and manage Apple Silicon-native virtual machines
 brew "lume"
+# Polyglot runtime manager (asdf rust clone)
+brew "mise"
 # Create, run, and share large language models (LLMs)
 brew "ollama"
 # Multi-agent orchestration framework for autonomous AI task completion

@@ -30,6 +30,9 @@ for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
 done
 unset _brew
 
+# Mise runtime activation
+command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
+
 # Conda Initialization
 for _conda_root in "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/.miniconda" /opt/homebrew/Caskroom/miniconda; do
   if [[ -x "$_conda_root/bin/conda" ]]; then

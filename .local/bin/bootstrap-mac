@@ -434,6 +434,12 @@ else
   log_info "Step 8/8: Skipping Homebrew package bundle."
 fi
 
+# Mise runtime activation
+if command -v mise >/dev/null 2>&1; then
+  log_info "Checking mise runtime versions..."
+  mise install 2>/dev/null || true
+fi
+
 echo
 echo -e "${GREEN}${BOLD}======================================================${RESET}"
 echo -e "${GREEN}${BOLD}✨ Machine ${MACHINE_ID} Bootstrap Complete!${RESET}"

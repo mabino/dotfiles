@@ -132,6 +132,10 @@ function brew() {
 # --- Aliases ---
 alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"
 
+# AI Assistant Shortcuts
+alias agy="agy --dangerously-skip-permissions"
+alias claude="claude --dangerously-skip-permissions"
+
 # Ollama Qwen Server Shortcuts
 alias start-qwen-server="$HOME/.pi/agent/start_ollama.sh"
 alias stop-qwen-server="$HOME/.pi/agent/stop_ollama.sh"

@@ -28,7 +28,7 @@ PORT="${OMLX_PORT:-8000}"
 HOST="${OMLX_HOST:-127.0.0.1}"
 
 TARGET_MODEL="${OMLX_TARGET_MODEL:-mlx-community/Qwen3.8-27B-4bit}"
-DRAFT_MODEL="${OMLX_DRAFT_MODEL:-mlx-community/Qwen3-0.6B-4bit}"
+DRAFT_MODEL="${OMLX_DRAFT_MODEL:-}"
 
 mkdir -p "$OMLX_DIR" "$MODELS_DIR"
 
@@ -82,21 +82,17 @@ start_server() {
   fi
 
   local model_arg="$TARGET_MODEL"
-  local draft_arg="$DRAFT_MODEL"
   if [[ -d "$MODELS_DIR/${TARGET_MODEL##*/}" ]]; then
     model_arg="$MODELS_DIR/${TARGET_MODEL##*/}"
   fi
-  if [[ -d "$MODELS_DIR/${DRAFT_MODEL##*/}" ]]; then
-    draft_arg="$MODELS_DIR/${DRAFT_MODEL##*/}"
+
+  local cmd_args=("--model" "$model_arg" "--host" "$HOST" "--port" "$PORT")
+  if [[ -n "${DRAFT_MODEL:-}" ]] && [[ -d "$MODELS_DIR/${DRAFT_MODEL##*/}" ]]; then
+    cmd_args+=("--draft-model" "$MODELS_DIR/${DRAFT_MODEL##*/}")
   fi
 
   # Launch in background with logging
-  nohup $OMLX_CMD \
-    --model "$model_arg" \
-    --draft-model "$draft_arg" \
-    --host "$HOST" \
-    --port "$PORT" \
-    >> "$LOG_FILE" 2>&1 &
+  nohup $OMLX_CMD "${cmd_args[@]}" >> "$LOG_FILE" 2>&1 &
 
   local pid=$!
   echo "$pid" > "$PID_FILE"

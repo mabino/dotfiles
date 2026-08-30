@@ -4,7 +4,7 @@ This repository manages my macOS development environment using `yadm`.
 
 ## 🚀 Quick Start (New Machine Bootstrap)
 
-On any fresh Mac, run this single command in Terminal:
+On any fresh or re-imaged Mac, run this single command in Terminal:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)"
@@ -18,6 +18,20 @@ For silent / unattended automation:
 ---
 
 ## 🛠 Key Features & Automations
+
+### 🏷 Hardware Identification (`FYB-<Serial>`)
+- Automatically detects the Mac's hardware serial number from IORegistry.
+- Sets `ComputerName` and `HostName` to `FYB-<Serial>`.
+- Generates dedicated SSH key pair `~/.ssh/FYB-<Serial>_id_ed25519`.
+
+### 🔑 SSH: Automated Discovery & Keychain Persistence (`ssh-reconcile`)
+To handle multiple devices with unique private keys safely and persist passphrases seamlessly across reboots:
+- **`~/.ssh/config`**: Publicly safe global defaults (`Host *`, fallback keys, aliases). Includes `config_local` at top.
+- **`~/.ssh/config_local`**: Stores device-specific `IdentityFile` paths. Auto-generated and managed by `ssh-reconcile`, ignored by git.
+- **macOS Keychain Integration**:
+  - `ssh-reconcile enroll`: Prompts for the passphrase once per machine and permanently stores it in macOS Keychain with `ssh-add --apple-use-keychain`.
+  - `ssh-reconcile load`: Called on shell startup in `~/.zshrc` to ensure `config_local` is synced and keys are loaded via `ssh-add --apple-load-keychain`.
+  - `ssh-reconcile status`: Inspects local keys, agent status, and keychain enrollment state.
 
 ### 🤖 AI Agent Strategy ("Master & Proxy")
 To maintain a "Single Source of Truth" across multiple AI assistants (Claude, Gemini, etc.), I use a master configuration:
@@ -34,16 +48,6 @@ The `brew` command is wrapped in `~/.zshrc`.
 - **Union Merge Driver**: Custom `brewfile-reconcile` driver prevents package loss across multiple machines.
 - **Auto-Commit**: If changes are detected, `yadm` automatically commits and pushes the updated `Brewfile` to GitHub.
 
-### 🔑 SSH: Automated Discovery & Keychain Persistence (`ssh-reconcile`)
-To handle multiple devices with unique private keys safely and persist passphrases seamlessly across reboots:
-- **`~/.ssh/config`**: Publicly safe global defaults (`Host *`, fallback keys). Includes local files:
-  - `Include config_local`: Local machine identity paths (managed by `ssh-reconcile`, git-ignored).
-  - `Include config_hosts`: Private host definitions, homelab jumps, and aliases (git-ignored).
-- **macOS Keychain Integration**:
-  - `ssh-reconcile enroll`: Prompts for the passphrase once per machine and permanently stores it in macOS Keychain with `ssh-add --apple-use-keychain`.
-  - `ssh-reconcile load`: Called on shell startup in `~/.zshrc` to ensure `config_local` is synced and keys are loaded via `ssh-add --apple-load-keychain`.
-  - `ssh-reconcile status`: Inspects local keys, agent status, and keychain enrollment state.
-
 ### 🪝 Yadm Lifecycle Hooks
 Automated hooks in `~/.config/yadm/hooks/`:
 - **`post_pull`**: Automatically triggers `ssh-reconcile sync`, verifies the Brewfile merge driver, and refreshes AI symlinks upon pulling updates.
@@ -54,13 +58,10 @@ All dotfiles tools (`brewfile-reconcile`, `ssh-reconcile`) include a full unit t
 - **Local & Container Runner**: Execute locally via `python3 -m unittest discover ~/.config/yadm/tests` or containerized via `~/.config/yadm/run_tests_container.sh`.
 - **GitHub Actions**: Automated CI workflow (`.github/workflows/ci.yml`) runs tests on Linux in Docker on every push/PR.
 
-### 🔍 Search & Navigation
-- **`fzf`**: Fuzzy finder for files, history, and processes.
-
 ### 🛡 Security & Hygiene
 - **`.gitignore_global`**: A comprehensive global ignore file that prevents accidental commits of:
   - AI configuration files (`.claude`, `.gemini`, etc.)
-  - Secrets (`.env`, `.pem`, `secrets.json`, private keys, `config_local`, `config_hosts`)
+  - Secrets (`.env`, `.pem`, `secrets.json`, private keys, `config_local`)
   - Development caches (`node_modules`, `__pycache__`, `dist/`)
 
 ## 🛠 Commands Reference

@@ -2,46 +2,61 @@
 
 These are my personal dotfiles, managed seamlessly with [yadm](https://yadm.io/) (Yet Another Dotfiles Manager).
 
-## 🚀 Quick Start (Brand New Mac)
+## 🚀 Quick Start (Brand New Mac Setup)
 
-On a fresh macOS machine, open Terminal and run the single-command bootstrap:
+On a fresh or re-imaged macOS machine, open Terminal and run the single-command bootstrap:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)"
 ```
 
-Or for a completely non-interactive / silent installation:
+Or for completely unattended / silent automation:
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --silent
 ```
 
-### What This Automates:
-1. Verifies/installs **Xcode Command Line Tools**.
-2. Installs and configures **Homebrew**.
-3. Discovers or creates a machine-specific **SSH ED25519 key** and permanently saves its passphrase to the **macOS Keychain** (challenge once per machine).
-4. Registers your public key with **GitHub** via `gh` CLI.
-5. Clones dotfiles using **yadm** (handling SSH/HTTPS fallback seamlessly).
-6. Configures global **Git hooks** and the **Brewfile union merge driver**.
-7. Links master **`~/.AGENT.md`** across **Claude**, **Gemini**, and **Copilot**.
-8. Installs all packages, CLI tools, and development apps via **`brew bundle --global`**.
+### What This Automates (From Bare Metal):
+1. **Hardware Identification (`FYB-<Serial>`)**: Automatically detects the machine serial number from IORegistry and sets macOS `ComputerName` and `HostName` to `FYB-<Serial>`.
+2. **Xcode Command Line Tools**: Installs or verifies CLT headlessly.
+3. **Homebrew Environment**: Installs Homebrew non-interactively and configures `shellenv`.
+4. **SSH & Keychain Integration**:
+   - Generates a dedicated `~/.ssh/FYB-<Serial>_id_ed25519` private key.
+   - Prompts for your Mac's local login password once and permanently writes it into the **macOS Data Protection Keychain** via `ssh-add --apple-use-keychain`.
+5. **GitHub Key Registration**: Installs `gh` CLI, authenticates via browser, and uploads the new public key to GitHub with title `FYB-<Serial>`.
+6. **Dotfiles via Yadm**: Clones the repository over SSH (`git@github.com:mabino/dotfiles.git`) with automatic HTTPS fallback.
+7. **Git Hooks & Merge Drivers**: Configures global Git hooks and registers the `brewfile-reconcile` union merge driver.
+8. **SSH Config Reconciliation**: Runs `ssh-reconcile sync` to generate `~/.ssh/config_local`.
+9. **Master AI Instructions**: Symlinks `~/.AGENT.md` to Claude (`CLAUDE.md`), Gemini (`GEMINI.md`), and Copilot (`copilot-instructions.md`).
+10. **Homebrew Package Bundle**: Installs all tracked CLI tools, packages, and GUI apps via `brew bundle --global`.
 
 ---
 
-## 🛠 Manual Installation & Management
+## 🛠 Manual Installation & Maintenance
 
-If you already have Git and `yadm` installed:
+If you already have Git and `yadm` installed, you can clone or run maintenance tasks directly:
 
 ```bash
 # Clone repository
 yadm clone git@github.com:mabino/dotfiles.git
 
-# Run bootstrap at any time to initialize or repair configuration
+# Re-run bootstrap anytime to repair or verify system setup
 yadm bootstrap
 
 # Check SSH key status or enroll new keys
 ssh-reconcile status
 ssh-reconcile enroll
+
+# Run containerized test suite
+~/.config/yadm/run_tests_container.sh
 ```
+
+---
+
+## 🔒 Security & Separation of Concerns
+
+- **Public Repository Safe**: Contains zero private keys, zero API tokens, and zero machine-specific credentials.
+- **Local Key Isolation**: Device-specific paths (`~/.ssh/config_local`) and private environment files (`.env`, `secrets.json`, `*.pem`) are globally ignored via `~/.gitignore_global`.
+- **Automated Keychain Persistence**: Passphrases are stored strictly in the macOS Data Protection Keychain and auto-loaded across reboots.
 
 ---
 
@@ -51,7 +66,7 @@ If you find yourself on a system where you **cannot** install `yadm`, you can st
 
 1. **Clone the bare repository:**
    ```bash
-   git clone --bare <your-repository-url> $HOME/.yadm/repo.git
+   git clone --bare git@github.com:mabino/dotfiles.git $HOME/.yadm/repo.git
    ```
 2. **Alias a Git command for the dotfiles:**
    ```bash

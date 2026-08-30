@@ -1,1 +1,1 @@
-../.AGENT.md
+/Users/mabino/.AGENT.md

@@ -2,7 +2,22 @@
 
 This repository manages my macOS development environment using `yadm`.
 
-## 🚀 Key Features & Automations
+## 🚀 Quick Start (New Machine Bootstrap)
+
+On any fresh Mac, run this single command in Terminal:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)"
+```
+
+For silent / unattended automation:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --silent
+```
+
+---
+
+## 🛠 Key Features & Automations
 
 ### 🤖 AI Agent Strategy ("Master & Proxy")
 To maintain a "Single Source of Truth" across multiple AI assistants (Claude, Gemini, etc.), I use a master configuration:
@@ -52,12 +67,12 @@ All dotfiles tools (`brewfile-reconcile`, `ssh-reconcile`) include a full unit t
   - Secrets (`.env`, `.pem`, `secrets.json`, private keys, `config_local`)
   - Development caches (`node_modules`, `__pycache__`, `dist/`)
 
-## 🛠 Usage
+## 🛠 Commands Reference
 ```bash
-# Clone to a new machine
+# Clone to an existing machine
 yadm clone git@github.com:mabino/dotfiles.git
 
-# Bootstrap system (SSH reconciliation, git hooks, package setup)
+# Bootstrap or repair system setup
 yadm bootstrap
 
 # Check SSH key status or enroll new keys

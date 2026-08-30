@@ -2,40 +2,49 @@
 
 These are my personal dotfiles, managed seamlessly with [yadm](https://yadm.io/) (Yet Another Dotfiles Manager).
 
-## Why yadm?
+## 🚀 Quick Start (Brand New Mac)
 
-I chose `yadm` over traditional symlink-based managers (like GNU Stow) or bulky frameworks for several reasons:
-
-1. **Git Native:** `yadm` is essentially a wrapper around standard Git, operating directly on a bare repository. There are no proprietary formats or complex directory structures. If you know Git, you know `yadm`.
-2. **No Symlink Mess:** Files live exactly where they are supposed to be. No cluttered source directories and confusing symlinks.
-3. **Built-in Extras:** It seamlessly supports file encryption (using GnuPG, age, or transcrypt), templating (for OS-specific differences), and a bootstrap script to run post-installation tasks.
-
-## Deployment Guide
-
-Deploying these dotfiles to a new machine is incredibly straightforward.
-
-### Prerequisites
-
-Ensure you have Git and [yadm](https://yadm.io/docs/install) installed. On macOS, you can install yadm via Homebrew:
+On a fresh macOS machine, open Terminal and run the single-command bootstrap:
 
 ```bash
-brew install yadm
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)"
 ```
 
-### Installation
+Or for a completely non-interactive / silent installation:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)" -- --silent
+```
 
-1. Clone the repository and apply the dotfiles in one command:
-   ```bash
-   yadm clone <your-repository-url>
-   ```
-2. (Optional) If the repository includes a bootstrap script (`~/.config/yadm/bootstrap`), `yadm clone` will prompt you to run it. If you want to run it manually later:
-   ```bash
-   yadm bootstrap
-   ```
-3. (Optional) Decrypt sensitive files if configured:
-   ```bash
-   yadm decrypt
-   ```
+### What This Automates:
+1. Verifies/installs **Xcode Command Line Tools**.
+2. Installs and configures **Homebrew**.
+3. Discovers or creates a machine-specific **SSH ED25519 key** and permanently saves its passphrase to the **macOS Keychain** (challenge once per machine).
+4. Registers your public key with **GitHub** via `gh` CLI.
+5. Clones dotfiles using **yadm** (handling SSH/HTTPS fallback seamlessly).
+6. Configures global **Git hooks** and the **Brewfile union merge driver**.
+7. Links master **`~/.AGENT.md`** across **Claude**, **Gemini**, and **Copilot**.
+8. Installs all packages, CLI tools, and development apps via **`brew bundle --global`**.
+9. Initializes **`mise`** runtimes and toolchains.
+
+---
+
+## 🛠 Manual Installation & Management
+
+If you already have Git and `yadm` installed:
+
+```bash
+# Clone repository
+yadm clone git@github.com:mabino/dotfiles.git
+
+# Run bootstrap at any time to initialize or repair configuration
+yadm bootstrap
+
+# Check SSH key status or enroll new keys
+ssh-reconcile status
+ssh-reconcile enroll
+```
+
+---
 
 ## Fallback Usage (Without yadm)
 
@@ -58,5 +67,3 @@ If you find yourself on a system where you **cannot** install `yadm`, you can st
    ```bash
    config config --local status.showUntrackedFiles no
    ```
-
-Now you can use the `config` alias exactly as you would use `git` (or `yadm`) to manage your files: `config status`, `config add <file>`, `config commit`, etc.

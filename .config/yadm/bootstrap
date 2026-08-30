@@ -4,13 +4,14 @@
 
 set -euo pipefail
 
-echo "========================================="
-echo "🚀 Bootstrapping development environment"
-echo "========================================="
+BOOTSTRAP_MAC="$HOME/.local/bin/bootstrap-mac"
+if [[ -x "$BOOTSTRAP_MAC" ]]; then
+  exec "$BOOTSTRAP_MAC" "$@"
+fi
 
-# 1. Ensure PATH includes ~/.local/bin and Homebrew
+# Fallback in case .local/bin/bootstrap-mac is not yet executable
 export PATH="$HOME/.local/bin:$PATH"
-for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew; do
+for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
   if [[ -x $_brew ]]; then
     eval "$($_brew shellenv)"
     break
@@ -18,38 +19,21 @@ for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
 done
 unset _brew
 
-# 2. Configure Git Hooks and Yadm merge driver
-echo "⚙️  Configuring global Git hooks & merge driver..."
 git config --global core.hooksPath "$HOME/.config/git/hooks"
 if command -v yadm >/dev/null 2>&1; then
   yadm gitconfig merge.brewfile-union.name "Union merge for Brewfiles"
   yadm gitconfig merge.brewfile-union.driver "$HOME/.local/bin/brewfile-reconcile git-merge %O %A %B"
 fi
 
-# 3. SSH Key & Keychain Reconciliation
-echo "🔑 Initializing SSH keys and Keychain integration..."
 if command -v ssh-reconcile >/dev/null 2>&1; then
   ssh-reconcile setup
-else
-  python3 "$HOME/.local/bin/ssh-reconcile" setup
 fi
 
-# 4. Assistant Symlinks Verification
-echo "🤖 Verifying AI instruction symlinks..."
-mkdir -p "$HOME/.claude" "$HOME/.gemini"
+mkdir -p "$HOME/.claude" "$HOME/.gemini" "$HOME/.copilot"
 [[ -L "$HOME/.claude/CLAUDE.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.claude/CLAUDE.md"
 [[ -L "$HOME/.gemini/GEMINI.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.gemini/GEMINI.md"
+[[ -L "$HOME/.copilot/copilot-instructions.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.copilot/copilot-instructions.md"
 
-# 5. Homebrew Bundle (Optional / Interactive)
 if command -v brew >/dev/null 2>&1 && [[ -f "$HOME/.Brewfile" ]]; then
-  if [[ -t 0 ]]; then
-    read -r -p "📦 Run 'brew bundle --global' to install Homebrew packages now? [y/N] " response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-      brew bundle --global || echo "⚠️  Some brew packages may have failed to install."
-    fi
-  else
-    echo "💡 Run 'brew bundle --global' to install tracked packages."
-  fi
+  brew bundle --global || true
 fi
-
-echo "✨ Bootstrap complete!"

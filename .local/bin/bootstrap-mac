@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+# ~/.local/bin/bootstrap-mac
+# Automated macOS bootstrap script for fresh machines or system repair.
+# Can be run via:
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabino/dotfiles/main/.local/bin/bootstrap-mac)"
+#   or locally via `bootstrap-mac` / `yadm bootstrap`
+
+set -euo pipefail
+
+# --- Color and Logging Helpers ---
+BOLD="\033[1m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+log_info()    { echo -e "${BLUE}${BOLD}==>${RESET} ${BOLD}$*${RESET}"; }
+log_success() { echo -e "${GREEN}${BOLD}✔${RESET} ${GREEN}$*${RESET}"; }
+log_warn()    { echo -e "${YELLOW}${BOLD}⚠${RESET} ${YELLOW}$*${RESET}"; }
+log_error()   { echo -e "${RED}${BOLD}✖${RESET} ${RED}$*${RESET}" >&2; }
+
+# --- Flags & Options ---
+SILENT=0
+SKIP_BREW=0
+SKIP_XCODE=0
+CUSTOM_KEY=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -s|--silent|-y|--yes|--non-interactive)
+      SILENT=1
+      shift
+      ;;
+    --skip-brew)
+      SKIP_BREW=1
+      shift
+      ;;
+    --skip-xcode)
+      SKIP_XCODE=1
+      shift
+      ;;
+    --key|--ssh-key-name)
+      CUSTOM_KEY="$2"
+      shift 2
+      ;;
+    -h|--help)
+      cat <<EOF
+Usage: bootstrap-mac [OPTIONS]
+
+Automated bootstrap script for macOS development machines.
+
+Options:
+  -s, --silent, -y, --yes     Run non-interactively (accepts all defaults)
+  --skip-brew                 Skip 'brew bundle' package installations
+  --skip-xcode                Skip Xcode Command Line Tools verification
+  --ssh-key-name <NAME>       Specify a custom SSH key filename
+  -h, --help                  Show this help message
+EOF
+      exit 0
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+# Safe prompt helper when piped via curl | bash
+prompt_confirm() {
+  local prompt_msg="$1"
+  local default_yes="${2:-1}"
+
+  if [[ "$SILENT" -eq 1 ]]; then
+    return 0
+  fi
+
+  local prompt_suffix="[Y/n]"
+  [[ "$default_yes" -eq 0 ]] && prompt_suffix="[y/N]"
+
+  local reply=""
+  if [[ -c /dev/tty ]]; then
+    read -r -p "$(echo -e "${BOLD}${prompt_msg}${RESET} ${prompt_suffix} ")" reply </dev/tty
+  else
+    read -r -p "$(echo -e "${BOLD}${prompt_msg}${RESET} ${prompt_suffix} ")" reply || reply=""
+  fi
+
+  if [[ -z "$reply" ]]; then
+    [[ "$default_yes" -eq 1 ]] && return 0 || return 1
+  fi
+
+  [[ "$reply" =~ ^[Yy]$ ]] && return 0 || return 1
+}
+
+echo -e "${BOLD}======================================================${RESET}"
+echo -e "${BOLD}🚀 macOS Development Machine Bootstrap & Setup${RESET}"
+echo -e "${BOLD}======================================================${RESET}"
+echo
+
+# --- Step 1: Xcode Command Line Tools ---
+if [[ "$SKIP_XCODE" -eq 0 && "$(uname -s)" == "Darwin" ]]; then
+  log_info "Step 1/8: Verifying Xcode Command Line Tools..."
+  if ! xcode-select -p >/dev/null 2>&1; then
+    log_info "Installing Xcode Command Line Tools..."
+    touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    PROD=$(softwareupdate -l | grep -B 1 "Command Line Tools" | awk -F'*' '/^ *\*/ {print $2}' | sed -e 's/^ *//' | tr -d '\n' || true)
+    if [[ -n "$PROD" ]]; then
+      softwareupdate -i "$PROD" --verbose || xcode-select --install
+    else
+      xcode-select --install
+    fi
+    rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    log_success "Xcode Command Line Tools installed."
+  else
+    log_success "Xcode Command Line Tools already installed: $(xcode-select -p)"
+  fi
+fi
+
+# --- Step 2: Homebrew Installation & Environment ---
+log_info "Step 2/8: Verifying Homebrew environment..."
+_BREW_BIN=""
+for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
+  if [[ -x "$_cand" ]]; then
+    _BREW_BIN="$_cand"
+    break
+  fi
+done
+
+if [[ -z "$_BREW_BIN" ]]; then
+  log_info "Homebrew not found. Installing Homebrew..."
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    if [[ -x "$_cand" ]]; then
+      _BREW_BIN="$_cand"
+      break
+    fi
+  done
+fi
+
+if [[ -n "$_BREW_BIN" ]]; then
+  eval "$("$_BREW_BIN" shellenv)"
+  export PATH="${_BREW_BIN%/brew}:$HOME/.local/bin:$PATH"
+  log_success "Homebrew active: $(command -v brew)"
+else
+  log_warn "Homebrew could not be located in standard prefixes."
+fi
+
+# --- Step 3: SSH Key Discovery & Creation ---
+log_info "Step 3/8: Setting up local SSH key & macOS Keychain integration..."
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+
+MACHINE_ID="$(scutil --get LocalHostName 2>/dev/null || scutil --get ComputerName 2>/dev/null || hostname -s)"
+MACHINE_ID="$(echo "$MACHINE_ID" | tr ' ' '-')"
+
+if [[ -n "$CUSTOM_KEY" ]]; then
+  KEY_NAME="$CUSTOM_KEY"
+else
+  KEY_NAME="${MACHINE_ID}_id_ed25519"
+fi
+KEY_PATH="$HOME/.ssh/$KEY_NAME"
+
+if [[ ! -f "$KEY_PATH" ]]; then
+  # Check if another private key already exists
+  EXISTING_KEY=""
+  for f in "$HOME/.ssh/"*_id_ed25519 "$HOME/.ssh/"id_ed25519 "$HOME/.ssh/"id_rsa; do
+    if [[ -f "$f" && ! "$f" =~ \.pub$ ]]; then
+      EXISTING_KEY="$f"
+      break
+    fi
+  done
+
+  if [[ -n "$EXISTING_KEY" ]]; then
+    KEY_PATH="$EXISTING_KEY"
+    KEY_NAME="$(basename "$EXISTING_KEY")"
+    log_info "Discovered existing SSH key: $KEY_NAME"
+  else
+    log_info "Generating new ED25519 SSH key: $KEY_NAME"
+    if [[ "$SILENT" -eq 1 ]]; then
+      ssh-keygen -t ed25519 -f "$KEY_PATH" -N "" -C "mabino@${MACHINE_ID}.local"
+    else
+      echo -e "${YELLOW}Please enter a passphrase for this machine's new SSH key:${RESET}"
+      if [[ -c /dev/tty ]]; then
+        ssh-keygen -t ed25519 -f "$KEY_PATH" -C "mabino@${MACHINE_ID}.local" </dev/tty
+      else
+        ssh-keygen -t ed25519 -f "$KEY_PATH" -C "mabino@${MACHINE_ID}.local"
+      fi
+    fi
+    log_success "Generated SSH key at $KEY_PATH"
+  fi
+fi
+
+chmod 600 "$KEY_PATH"
+[[ -f "${KEY_PATH}.pub" ]] && chmod 644 "${KEY_PATH}.pub"
+
+# Enroll in macOS Keychain
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  log_info "Enrolling $KEY_NAME into macOS Keychain..."
+  if [[ -c /dev/tty && "$SILENT" -eq 0 ]]; then
+    ssh-add --apple-use-keychain "$KEY_PATH" </dev/tty || true
+  else
+    ssh-add --apple-use-keychain "$KEY_PATH" 2>/dev/null || true
+  fi
+  ssh-add --apple-load-keychain >/dev/null 2>&1 || true
+fi
+
+# Display Public Key & GitHub Registration
+if [[ -f "${KEY_PATH}.pub" ]]; then
+  PUB_CONTENT="$(cat "${KEY_PATH}.pub")"
+  echo
+  echo -e "${BOLD}Your SSH Public Key for this machine (${MACHINE_ID}):${RESET}"
+  echo -e "${GREEN}${PUB_CONTENT}${RESET}"
+  echo
+
+  if command -v gh >/dev/null 2>&1; then
+    if gh auth status >/dev/null 2>&1; then
+      log_info "GitHub CLI (gh) authenticated. Checking GitHub SSH keys..."
+      if ! gh ssh-key list | grep -q "$PUB_CONTENT" 2>/dev/null; then
+        if prompt_confirm "Add this public key to your GitHub account now?" 1; then
+          gh ssh-key add "${KEY_PATH}.pub" --title "$MACHINE_ID" && log_success "SSH key registered with GitHub!" || log_warn "Could not add key automatically."
+        fi
+      else
+        log_success "SSH key already registered on GitHub."
+      fi
+    fi
+  fi
+fi
+
+# --- Step 4: Yadm Installation & Dotfiles Clone ---
+log_info "Step 4/8: Managing Dotfiles via yadm..."
+if ! command -v yadm >/dev/null 2>&1; then
+  log_info "Installing yadm via Homebrew..."
+  brew install yadm
+fi
+
+DOTFILES_REPO="git@github.com:mabino/dotfiles.git"
+DOTFILES_HTTPS="https://github.com/mabino/dotfiles.git"
+
+if ! yadm rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  log_info "Cloning dotfiles repository..."
+  # Try SSH clone first, fallback to HTTPS if SSH key not yet authorized on GitHub
+  if yadm clone "$DOTFILES_REPO" 2>/dev/null; then
+    log_success "Cloned dotfiles via SSH."
+  else
+    log_warn "SSH clone failed (key may not be uploaded to GitHub yet). Cloning via HTTPS..."
+    yadm clone "$DOTFILES_HTTPS"
+    # Switch remote to SSH for future pushes
+    yadm remote set-url origin "$DOTFILES_REPO" 2>/dev/null || true
+    log_success "Cloned dotfiles via HTTPS (origin remote set to SSH)."
+  fi
+else
+  log_info "Existing yadm dotfiles repository detected. Pulling latest changes..."
+  yadm pull --rebase --autostash --quiet 2>/dev/null || log_warn "Could not pull latest changes (offline or unauthenticated)."
+fi
+
+# --- Step 5: Git Configuration, Hooks & Merge Driver ---
+log_info "Step 5/8: Configuring Git hooks and yadm merge drivers..."
+git config --global core.hooksPath "$HOME/.config/git/hooks"
+if command -v yadm >/dev/null 2>&1; then
+  yadm gitconfig merge.brewfile-union.name "Union merge for Brewfiles"
+  yadm gitconfig merge.brewfile-union.driver "$HOME/.local/bin/brewfile-reconcile git-merge %O %A %B"
+fi
+log_success "Git hooks and merge driver configured."
+
+# --- Step 6: SSH Reconciliation & Config_Local ---
+log_info "Step 6/8: Reconciling SSH configuration..."
+if [[ -x "$HOME/.local/bin/ssh-reconcile" ]]; then
+  "$HOME/.local/bin/ssh-reconcile" sync
+  "$HOME/.local/bin/ssh-reconcile" load --quiet || true
+  log_success "SSH config_local synchronized."
+fi
+
+# --- Step 7: AI Assistant Configuration Symlinks ---
+log_info "Step 7/8: Linking AI assistant instructions (~/.AGENT.md)..."
+mkdir -p "$HOME/.claude" "$HOME/.gemini" "$HOME/.copilot"
+[[ -f "$HOME/.AGENT.md" ]] || log_warn "~/.AGENT.md not found in home directory."
+
+if [[ -f "$HOME/.AGENT.md" ]]; then
+  ln -sf "$HOME/.AGENT.md" "$HOME/.claude/CLAUDE.md"
+  ln -sf "$HOME/.AGENT.md" "$HOME/.gemini/GEMINI.md"
+  ln -sf "$HOME/.AGENT.md" "$HOME/.copilot/copilot-instructions.md"
+  log_success "Symlinks configured for Claude, Gemini, and Copilot."
+fi
+
+# --- Step 8: Homebrew Bundle & Mise Runtimes ---
+if [[ "$SKIP_BREW" -eq 0 && -f "$HOME/.Brewfile" ]]; then
+  log_info "Step 8/8: Installing Homebrew packages & developer toolchains..."
+  if prompt_confirm "Run 'brew bundle --global' to install tracked packages and CLI tools?" 1; then
+    brew bundle --global || log_warn "Some brew bundle packages may have encountered issues."
+    log_success "Homebrew bundle installed."
+  else
+    log_info "Skipping brew bundle per user choice. Run 'brew bundle --global' anytime later."
+  fi
+else
+  log_info "Step 8/8: Skipping Homebrew package bundle."
+fi
+
+# Mise runtime activation
+if command -v mise >/dev/null 2>&1; then
+  log_info "Checking mise runtime versions..."
+  mise install 2>/dev/null || true
+fi
+
+echo
+echo -e "${GREEN}${BOLD}======================================================${RESET}"
+echo -e "${GREEN}${BOLD}✨ Machine Bootstrap Complete!${RESET}"
+echo -e "${GREEN}${BOLD}======================================================${RESET}"
+echo
+echo -e "Next steps:"
+echo -e "  1. Reload your shell: ${BOLD}exec zsh${RESET} or open a new terminal tab"
+echo -e "  2. If not authenticated with GitHub CLI, run: ${BOLD}gh auth login -w -p ssh${RESET}"
+echo -e "  3. Verify SSH and Keychain status anytime via: ${BOLD}ssh-reconcile status${RESET}"
+echo

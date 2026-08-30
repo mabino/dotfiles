@@ -206,16 +206,35 @@ fi
 if [[ "$SKIP_XCODE" -eq 0 && "$(uname -s)" == "Darwin" ]]; then
   log_info "Step 2/8: Verifying Xcode Command Line Tools..."
   if ! xcode-select -p >/dev/null 2>&1; then
-    log_info "Installing Xcode Command Line Tools..."
+    echo
+    echo -e "${YELLOW}${BOLD}======================================================${RESET}"
+    echo -e "${YELLOW}${BOLD}📦 ACTION REQUIRED: Xcode Command Line Tools${RESET}"
+    echo -e "${YELLOW}${BOLD}======================================================${RESET}"
+    echo -e "${YELLOW}A native macOS installer window has opened on your screen.${RESET}"
+    echo
+    echo -e "  1. Switch to the ${BOLD}'Install Command Line Developer Tools'${RESET} dialog."
+    echo -e "  2. Click ${BOLD}Install${RESET} and accept the Apple license agreement."
+    echo -e "  3. Wait for the progress bar to complete."
+    echo
+    echo -e "${YELLOW}${BOLD}======================================================${RESET}"
+    echo
+
     touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
     xcode-select --install 2>/dev/null || true
-    echo -e "${YELLOW}${BOLD}A macOS dialog has opened to install Xcode Command Line Tools.${RESET}"
-    echo -e "${YELLOW}Please click 'Install' on the dialog. Waiting for installation to complete...${RESET}"
-    until xcode-select -p >/dev/null 2>&1; do
-      sleep 4
-    done
+
+    if [[ "$SILENT" -eq 0 && -c /dev/tty ]]; then
+      read -r -p "$(echo -e "${BOLD}👉 Press [Enter] here once the GUI installation has finished...${RESET}")" </dev/tty
+    fi
+
+    # Verification and wait loop
+    if ! xcode-select -p >/dev/null 2>&1; then
+      echo -e "Waiting for Xcode Command Line Tools verification..."
+      until xcode-select -p >/dev/null 2>&1; do
+        sleep 3
+      done
+    fi
     rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
-    log_success "Xcode Command Line Tools installed: $(xcode-select -p)"
+    log_success "Xcode Command Line Tools installed and verified: $(xcode-select -p)"
   else
     log_success "Xcode Command Line Tools active: $(xcode-select -p)"
   fi

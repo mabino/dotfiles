@@ -1,20 +1,6 @@
-# --- Environment Variables ---
-export ZSH="$HOME/.oh-my-zsh"
-export NODE_EXTRA_CA_CERTS=$(python3 -m certifi)
-export NODE_USE_SYSTEM_CA=1
-export HOMEBREW_NO_ENV_HINTS=1
-
-# --- Path Configuration ---
+# --- Path & Homebrew Configuration ---
 export PATH="$HOME/.local/bin:$PATH"
 
-# --- Oh My Zsh Setup ---
-if [[ -d "$ZSH" && -f "$ZSH/oh-my-zsh.sh" ]]; then
-  ZSH_THEME="robbyrussell"
-  plugins=(git)
-  source "$ZSH/oh-my-zsh.sh"
-fi
-
-# --- Tool Initializations ---
 # Homebrew lives at ~/.homebrew (preferred); fall back for machines not yet migrated.
 # Clear stale env inherited from a shell that predates a prefix move, otherwise
 # `brew shellenv` assumes it is already configured and emits nothing.
@@ -29,6 +15,27 @@ for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
   fi
 done
 unset _brew
+
+# --- Environment Variables ---
+export ZSH="$HOME/.oh-my-zsh"
+export HOMEBREW_NO_ENV_HINTS=1
+export NODE_USE_SYSTEM_CA=1
+
+# Node extra CA certificates (from Homebrew certifi / ca-certificates if available)
+if command -v python3 >/dev/null 2>&1; then
+  _certifi_path="$(python3 -m certifi 2>/dev/null || true)"
+  [[ -n "$_certifi_path" ]] && export NODE_EXTRA_CA_CERTS="$_certifi_path"
+  unset _certifi_path
+elif [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/etc/ca-certificates/cert.pem" ]]; then
+  export NODE_EXTRA_CA_CERTS="$HOMEBREW_PREFIX/etc/ca-certificates/cert.pem"
+fi
+
+# --- Oh My Zsh Setup ---
+if [[ -d "$ZSH" && -f "$ZSH/oh-my-zsh.sh" ]]; then
+  ZSH_THEME="robbyrussell"
+  plugins=(git)
+  source "$ZSH/oh-my-zsh.sh"
+fi
 
 # Mise runtime activation
 command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"

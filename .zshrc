@@ -162,6 +162,12 @@ alias stop-omlx-server="$HOME/.local/bin/omlx-server stop"
 alias restart-omlx-server="$HOME/.local/bin/omlx-server restart"
 alias status-omlx-server="$HOME/.local/bin/omlx-server status"
 
+# Typo Aliases (olmx -> omlx)
+alias start-olmx-server="$HOME/.local/bin/omlx-server start"
+alias stop-olmx-server="$HOME/.local/bin/omlx-server stop"
+alias restart-olmx-server="$HOME/.local/bin/omlx-server restart"
+alias status-olmx-server="$HOME/.local/bin/omlx-server status"
+
 function pi-local() {
   (
     cd "$HOME/local-coding-agent" 2>/dev/null || { echo "local-coding-agent workspace not found at ~/local-coding-agent. Run bootstrap-local-agent." >&2; return 1; }

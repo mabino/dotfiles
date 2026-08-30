@@ -34,15 +34,11 @@ The `brew` command is wrapped in `~/.zshrc`.
 - **Union Merge Driver**: Custom `brewfile-reconcile` driver prevents package loss across multiple machines.
 - **Auto-Commit**: If changes are detected, `yadm` automatically commits and pushes the updated `Brewfile` to GitHub.
 
-### 🛠 Runtime Management (mise)
-Switched from `asdf` to **`mise`** for faster, Rust-based runtime management.
-- **Tracking**: `~/.tool-versions` is tracked by `yadm`.
-- **Automation**: Global version changes via `mise use --global` are automatically committed and pushed.
-
 ### 🔑 SSH: Automated Discovery & Keychain Persistence (`ssh-reconcile`)
 To handle multiple devices with unique private keys safely and persist passphrases seamlessly across reboots:
-- **`~/.ssh/config`**: Tracks global aliases and defaults. It includes `Include config_local` at the top.
-- **`~/.ssh/config_local`**: Stores device-specific `IdentityFile` paths. Auto-generated and managed by `ssh-reconcile`, ignored by git.
+- **`~/.ssh/config`**: Publicly safe global defaults (`Host *`, fallback keys). Includes local files:
+  - `Include config_local`: Local machine identity paths (managed by `ssh-reconcile`, git-ignored).
+  - `Include config_hosts`: Private host definitions, homelab jumps, and aliases (git-ignored).
 - **macOS Keychain Integration**:
   - `ssh-reconcile enroll`: Prompts for the passphrase once per machine and permanently stores it in macOS Keychain with `ssh-add --apple-use-keychain`.
   - `ssh-reconcile load`: Called on shell startup in `~/.zshrc` to ensure `config_local` is synced and keys are loaded via `ssh-add --apple-load-keychain`.
@@ -64,7 +60,7 @@ All dotfiles tools (`brewfile-reconcile`, `ssh-reconcile`) include a full unit t
 ### 🛡 Security & Hygiene
 - **`.gitignore_global`**: A comprehensive global ignore file that prevents accidental commits of:
   - AI configuration files (`.claude`, `.gemini`, etc.)
-  - Secrets (`.env`, `.pem`, `secrets.json`, private keys, `config_local`)
+  - Secrets (`.env`, `.pem`, `secrets.json`, private keys, `config_local`, `config_hosts`)
   - Development caches (`node_modules`, `__pycache__`, `dist/`)
 
 ## 🛠 Commands Reference

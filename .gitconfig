@@ -3,7 +3,8 @@
 	name = Michael Bino
 	email = mabino@gmail.com
 [core]
-	hooksPath = /Users/mabino/.config/git/hooks
+	hooksPath = ~/.config/git/hooks
+	excludesFile = ~/.gitignore_global
 [init]
 	defaultBranch = main
 [pull]

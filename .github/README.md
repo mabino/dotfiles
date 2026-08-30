@@ -24,7 +24,6 @@ Or for a completely non-interactive / silent installation:
 6. Configures global **Git hooks** and the **Brewfile union merge driver**.
 7. Links master **`~/.AGENT.md`** across **Claude**, **Gemini**, and **Copilot**.
 8. Installs all packages, CLI tools, and development apps via **`brew bundle --global`**.
-9. Initializes **`mise`** runtimes and toolchains.
 
 ---
 

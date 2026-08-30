@@ -27,8 +27,6 @@ for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
   fi
 done
 unset _brew
-# Activate mise only if installed (manages per-project runtime versions via .tool-versions).
-command -v mise >/dev/null && eval "$(mise activate zsh)"
 
 # Conda Initialization
 for _conda_root in "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/.miniconda" /opt/homebrew/Caskroom/miniconda; do
@@ -125,16 +123,6 @@ function brew() {
   return $EXIT_CODE
 }
 
-# Mise wrapper to sync global config on change
-function mise() {
-  command mise "$@"
-  local EXIT_CODE=$?
-  if [[ $EXIT_CODE -eq 0 && "$1" == "use" && "$2" == "--global" ]]; then
-    echo "Updating ~/.config/mise/config.toml and syncing with yadm..."
-    _yadm_sync ~/.config/mise/config.toml "Auto-update mise config.toml after mise $1"
-  fi
-  return $EXIT_CODE
-}
 
 # --- Aliases ---
 alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"

@@ -81,3 +81,5 @@ DerivedData/
 *.sublime-project
 *.sublime-workspace
 .ssh/config_local
+.ssh/config_hosts
+.ssh/config_*

@@ -8,8 +8,6 @@ brew "ffmpeg"
 brew "gh"
 # Tool to unpack installers created by Inno Setup
 brew "innoextract"
-# Polyglot runtime manager (asdf rust clone)
-brew "mise"
 # Yet Another Dotfiles Manager
 brew "yadm"
 # Mozilla CA certificate store

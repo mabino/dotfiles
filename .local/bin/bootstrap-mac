@@ -449,9 +449,11 @@ fi
 # --- Step 9: Local MLX Agent Stack (High-Memory Apple Silicon) ---
 if [[ "$SKIP_LOCAL_AGENT" -eq 0 && -x "$HOME/.local/bin/bootstrap-local-agent" ]]; then
   log_info "Step 9/9: Evaluating local MLX coding agent stack eligibility..."
-  local_agent_args=()
-  [[ "$SILENT" -eq 1 ]] && local_agent_args+=(--silent)
-  "$HOME/.local/bin/bootstrap-local-agent" "${local_agent_args[@]}" || log_warn "Local agent bootstrap skipped or encountered issues."
+  if [[ "$SILENT" -eq 1 ]]; then
+    "$HOME/.local/bin/bootstrap-local-agent" --silent || log_warn "Local agent bootstrap skipped or encountered issues."
+  else
+    "$HOME/.local/bin/bootstrap-local-agent" || log_warn "Local agent bootstrap skipped or encountered issues."
+  fi
 else
   log_info "Step 9/9: Skipping local MLX coding agent stack."
 fi

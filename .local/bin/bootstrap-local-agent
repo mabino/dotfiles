@@ -235,6 +235,48 @@ cat << 'EOF' > "$HOME/.pi/agent/models.json"
 EOF
 log_success "Configured local oMLX model provider in ~/.pi/agent/models.json"
 
+# Provision ~/.local/bin/pi-local launcher executable
+mkdir -p "$HOME/.local/bin"
+cat << 'EOF' > "$HOME/.local/bin/pi-local"
+#!/usr/bin/env bash
+# ==============================================================================
+# pi-local: Native Apple Silicon MLX Pi Coding Agent Launcher
+# ==============================================================================
+set -euo pipefail
+
+WORKSPACE_DIR="${LOCAL_AGENT_DIR:-$HOME/local-coding-agent}"
+
+if [[ ! -d "$WORKSPACE_DIR" ]]; then
+  echo "Error: Workspace not found at $WORKSPACE_DIR." >&2
+  echo "Run 'bootstrap-local-agent' to initialize the local agent environment." >&2
+  exit 1
+fi
+
+# Ensure oMLX server is running
+if [[ -x "$HOME/.local/bin/omlx-server" ]]; then
+  if ! "$HOME/.local/bin/omlx-server" status 2>/dev/null | grep -q "RUNNING"; then
+    echo "==> Local MLX server is not running. Starting omlx-server..." >&2
+    "$HOME/.local/bin/omlx-server" start >/dev/null 2>&1 || true
+    for _ in {1..10}; do
+      if curl -s http://127.0.0.1:8000/v1/models >/dev/null 2>&1; then
+        break
+      fi
+      sleep 1
+    done
+  fi
+fi
+
+cd "$WORKSPACE_DIR"
+
+if command -v mise >/dev/null 2>&1; then
+  exec mise exec -- npx pi --provider omlx --model "omlx/default_model" "$@"
+else
+  exec npx pi --provider omlx --model "omlx/default_model" "$@"
+fi
+EOF
+chmod +x "$HOME/.local/bin/pi-local"
+log_success "Provisioned standalone launcher at ~/.local/bin/pi-local"
+
 # --- Step 4: Install Sandboxed Runtimes & Pi Coding Agent ---
 if command -v mise >/dev/null 2>&1; then
   log_info "Installing sandboxed Node.js 22 & Python 3.12 via mise..."
@@ -288,7 +330,9 @@ if [[ -d "$MODELS_DIR/Qwen3.8-27B-4bit" ]] && [[ -x "$HOME/.local/bin/omlx-serve
   done
   log_info "Executing Hello World validation prompt against local MLX stack..."
   test_resp=""
-  if command -v mise >/dev/null 2>&1; then
+  if [[ -x "$HOME/.local/bin/pi-local" ]]; then
+    test_resp="$("$HOME/.local/bin/pi-local" -p "Write a 1-line Python Hello World program" 2>/dev/null || true)"
+  elif command -v mise >/dev/null 2>&1; then
     test_resp="$(cd "$WORKSPACE_DIR" && mise exec -- npx pi --provider omlx --model "omlx/default_model" -p "Write a 1-line Python Hello World program" 2>/dev/null || true)"
   fi
   if [[ -n "$test_resp" ]]; then

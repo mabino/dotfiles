@@ -152,21 +152,11 @@ function copilot() {
 # --- Aliases ---
 alias empty="osascript -e 'try' -e 'tell application \"Finder\" to empty trash' -e 'end try' -e 'display notification \"The bin is clear!\" with title \"Trash Emptied\"'"
 
-# Ollama Qwen Server Shortcuts
-alias start-qwen-server="$HOME/.pi/agent/start_ollama.sh"
-alias stop-qwen-server="$HOME/.pi/agent/stop_ollama.sh"
-
 # Local oMLX + Pi Agent Shortcuts
 alias start-omlx-server="$HOME/.local/bin/omlx-server start"
 alias stop-omlx-server="$HOME/.local/bin/omlx-server stop"
 alias restart-omlx-server="$HOME/.local/bin/omlx-server restart"
 alias status-omlx-server="$HOME/.local/bin/omlx-server status"
-
-# Typo Aliases (olmx -> omlx)
-alias start-olmx-server="$HOME/.local/bin/omlx-server start"
-alias stop-olmx-server="$HOME/.local/bin/omlx-server stop"
-alias restart-olmx-server="$HOME/.local/bin/omlx-server restart"
-alias status-olmx-server="$HOME/.local/bin/omlx-server status"
 
 function pi-local() {
   (

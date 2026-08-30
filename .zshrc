@@ -163,9 +163,9 @@ function pi-local() {
   (
     cd "$HOME/local-coding-agent" 2>/dev/null || { echo "local-coding-agent workspace not found at ~/local-coding-agent. Run bootstrap-local-agent." >&2; return 1; }
     if command -v mise >/dev/null 2>&1; then
-      mise exec -- npx pi --provider omlx --model "omlx/mlx-community/Qwen3.8-27B-4bit" "$@"
+      mise exec -- npx pi --provider omlx --model "omlx/default_model" "$@"
     else
-      npx pi --provider omlx --model "omlx/mlx-community/Qwen3.8-27B-4bit" "$@"
+      npx pi --provider omlx --model "omlx/default_model" "$@"
     fi
   )
 }

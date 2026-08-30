@@ -104,6 +104,18 @@ start_server() {
 
   if kill -0 "$pid" 2>/dev/null; then
     log_success "oMLX server started (PID: $pid). Logs: $LOG_FILE"
+    # Pre-warm model in Apple Silicon Unified Memory
+    log_info "Pre-warming model in Unified Memory for instant sub-second response..."
+    for _ in {1..20}; do
+      if curl -s "http://${HOST}:${PORT}/v1/models" >/dev/null 2>&1; then
+        curl -s -X POST "http://${HOST}:${PORT}/v1/chat/completions" \
+          -H "Content-Type: application/json" \
+          -d '{"model":"default_model","messages":[{"role":"user","content":"hi"}],"max_tokens":1}' >/dev/null 2>&1 || true
+        break
+      fi
+      sleep 1
+    done
+    log_success "oMLX server is warm and ready for inference."
   else
     log_error "oMLX server failed to start. Inspect logs: $LOG_FILE"
     rm -f "$PID_FILE"

@@ -22,6 +22,25 @@ log_success() { echo -e "${GREEN}${BOLD}✔${RESET} ${GREEN}$*${RESET}"; }
 log_warn()    { echo -e "${YELLOW}${BOLD}⚠${RESET} ${YELLOW}$*${RESET}"; }
 log_error()   { echo -e "${RED}${BOLD}✖${RESET} ${RED}$*${RESET}" >&2; }
 
+# --- Trap & Automated Cleanup ---
+declare -a CLEANUP_FILES=()
+
+cleanup() {
+  local exit_code=$?
+  # Remove registered temporary files
+  for f in "${CLEANUP_FILES[@]:-}"; do
+    [[ -n "$f" && -e "$f" ]] && rm -rf "$f"
+  done
+  # Clean up Xcode CLT sentinel if lingering
+  rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress 2>/dev/null || true
+  # Wipe sensitive variables from memory
+  PASSPHRASE=""
+  SSH_PASSPHRASE=""
+  return "$exit_code" 2>/dev/null || exit "$exit_code"
+}
+
+trap cleanup EXIT INT TERM HUP
+
 # --- Flags & Options ---
 SILENT=0
 SKIP_BREW=0
@@ -219,6 +238,7 @@ if [[ ! -f "$KEY_PATH" ]]; then
     # Enroll in macOS Keychain with SSH_ASKPASS to avoid second prompt
     if [[ "$(uname -s)" == "Darwin" && -n "$PASSPHRASE" ]]; then
       ASKPASS_TMP="$(mktemp)"
+      CLEANUP_FILES+=("$ASKPASS_TMP")
       echo '#!/bin/sh' > "$ASKPASS_TMP"
       echo "echo '$PASSPHRASE'" >> "$ASKPASS_TMP"
       chmod 700 "$ASKPASS_TMP"

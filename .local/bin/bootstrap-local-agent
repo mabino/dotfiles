@@ -157,6 +157,12 @@ else
   fi
 fi
 
+# Ensure Hugging Face CLI (hf) is active for fast model streaming
+if ! command -v hf >/dev/null 2>&1 && command -v uv >/dev/null 2>&1; then
+  log_info "Installing Hugging Face CLI (hf) via uv..."
+  uv tool install --quiet huggingface_hub >/dev/null 2>&1 || true
+fi
+
 if command -v brew >/dev/null 2>&1 && ! command -v mise >/dev/null 2>&1; then
   log_info "Installing mise..."
   brew install mise 2>/dev/null || true

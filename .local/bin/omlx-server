@@ -144,25 +144,34 @@ status_server() {
   fi
 }
 
+download_single_model() {
+  local model="$1"
+  local target_dir="$MODELS_DIR/${model##*/}"
+  log_info "Downloading ${model} -> ${target_dir}..."
+
+  if command -v hf >/dev/null 2>&1; then
+    hf download "$model" --local-dir "$target_dir"
+  elif command -v huggingface-cli >/dev/null 2>&1; then
+    huggingface-cli download "$model" --local-dir "$target_dir"
+  elif command -v uv >/dev/null 2>&1; then
+    uv run --with huggingface_hub python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${model}', local_dir='${target_dir}')"
+  elif command -v pip3 >/dev/null 2>&1; then
+    pip3 install --quiet huggingface_hub && python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${model}', local_dir='${target_dir}')"
+  else
+    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${model}', local_dir='${target_dir}')" || {
+      log_error "Could not download ${model}. Install hf via 'uv tool install huggingface_hub'."
+      return 1
+    }
+  fi
+}
+
 download_models() {
   log_info "Downloading model weights into ${MODELS_DIR}..."
   log_info "1/2: Target Model (${TARGET_MODEL})..."
-  if command -v hf >/dev/null 2>&1; then
-    hf download "$TARGET_MODEL" --local-dir "$MODELS_DIR/${TARGET_MODEL##*/}" || true
-  elif command -v huggingface-cli >/dev/null 2>&1; then
-    huggingface-cli download "$TARGET_MODEL" --local-dir "$MODELS_DIR/${TARGET_MODEL##*/}" || true
-  else
-    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${TARGET_MODEL}', local_dir='${MODELS_DIR}/${TARGET_MODEL##*/}')" 2>/dev/null || log_warn "Automated download requires huggingface_hub. Install via 'pip install huggingface_hub'."
-  fi
+  download_single_model "$TARGET_MODEL" || log_warn "Target model download encountered an issue."
 
   log_info "2/2: Draft Model (${DRAFT_MODEL})..."
-  if command -v hf >/dev/null 2>&1; then
-    hf download "$DRAFT_MODEL" --local-dir "$MODELS_DIR/${DRAFT_MODEL##*/}" || true
-  elif command -v huggingface-cli >/dev/null 2>&1; then
-    huggingface-cli download "$DRAFT_MODEL" --local-dir "$MODELS_DIR/${DRAFT_MODEL##*/}" || true
-  else
-    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='${DRAFT_MODEL}', local_dir='${MODELS_DIR}/${DRAFT_MODEL##*/}')" 2>/dev/null || true
-  fi
+  download_single_model "$DRAFT_MODEL" || log_warn "Draft model download encountered an issue."
 
   log_success "Model download stage finished."
 }

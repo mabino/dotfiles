@@ -157,6 +157,38 @@ else
   fi
 fi
 
+# Idempotently patch mlx_lm.server to map all model aliases in-memory (prevents network hangs)
+patch_mlx_server_aliases() {
+  local py_bin=""
+  if [[ -x "$HOME/.local/share/uv/tools/mlx-lm/bin/python" ]]; then
+    py_bin="$HOME/.local/share/uv/tools/mlx-lm/bin/python"
+  elif command -v python3 >/dev/null 2>&1; then
+    py_bin="python3"
+  fi
+  if [[ -n "$py_bin" ]]; then
+    "$py_bin" -c "
+import importlib.util
+from pathlib import Path
+spec = importlib.util.find_spec('mlx_lm.server')
+if spec and spec.origin:
+    p = Path(spec.origin)
+    code = p.read_text(encoding='utf-8')
+    target = 'self._model_map[\"default_model\"] = self.cli_args.model'
+    patch = '''self._model_map[\"default_model\"] = self.cli_args.model
+        if self.cli_args.model:
+            model_p = Path(self.cli_args.model)
+            self._model_map[str(model_p)] = self.cli_args.model
+            self._model_map[str(model_p.resolve())] = self.cli_args.model
+            self._model_map[model_p.name] = self.cli_args.model
+            self._model_map[f\"mlx-community/{model_p.name}\"] = self.cli_args.model'''
+    if target in code and 'mlx-community/' not in code:
+        code = code.replace(target, patch)
+        p.write_text(code, encoding='utf-8')
+" >/dev/null 2>&1 || true
+  fi
+}
+patch_mlx_server_aliases
+
 # Ensure Hugging Face CLI (hf) is active for fast model streaming
 if ! command -v hf >/dev/null 2>&1 && command -v uv >/dev/null 2>&1; then
   log_info "Installing Hugging Face CLI (hf) via uv..."

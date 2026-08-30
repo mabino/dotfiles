@@ -154,6 +154,26 @@ class BootstrapLocalAgentTests(unittest.TestCase):
         self.assertIn("below 128GB threshold", res.stdout)
         self.assertFalse(os.path.exists(os.path.join(self.workspace_dir, "mise.toml")))
 
+    def test_patch_mlx_server_aliases_logic(self):
+        sample_code = """
+        self._model_map = {}
+        self._adapter_map = {}
+        self._draft_model_map = {}
+        self._model_map["default_model"] = self.cli_args.model
+        self._adapter_map["default_model"] = self.cli_args.adapter_path
+"""
+        target = 'self._model_map["default_model"] = self.cli_args.model'
+        patch = '''self._model_map["default_model"] = self.cli_args.model
+        if self.cli_args.model:
+            model_p = Path(self.cli_args.model)
+            self._model_map[str(model_p)] = self.cli_args.model
+            self._model_map[str(model_p.resolve())] = self.cli_args.model
+            self._model_map[model_p.name] = self.cli_args.model
+            self._model_map[f"mlx-community/{model_p.name}"] = self.cli_args.model'''
+        patched = sample_code.replace(target, patch)
+        self.assertIn("mlx-community/", patched)
+        self.assertIn("default_model", patched)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -98,6 +98,11 @@ class BootstrapLocalAgentTests(unittest.TestCase):
         self.assertIn('OPENAI_API_KEY = "omlx-local"', content)
         self.assertIn('OPENAI_MODEL = "Qwen3-Coder-30B-Instruct-4bit"', content)
 
+        if sys.platform == "darwin":
+            st = os.stat(self.workspace_dir)
+            UF_HIDDEN = 0x8000
+            self.assertTrue(bool(st.st_flags & UF_HIDDEN))
+
     def test_non_darwin_skip(self):
         mock_bin = os.path.join(self.temp_dir.name, "mock_bin_linux")
         os.makedirs(mock_bin, exist_ok=True)

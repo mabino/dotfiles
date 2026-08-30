@@ -150,6 +150,9 @@ fi
 # --- Step 3: Scaffold Sandboxed Workspace (~/local-coding-agent) ---
 log_info "Scaffolding isolated workspace at ${WORKSPACE_DIR}..."
 mkdir -p "$WORKSPACE_DIR"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  chflags hidden "$WORKSPACE_DIR" 2>/dev/null || true
+fi
 
 cat << 'EOF' > "$WORKSPACE_DIR/mise.toml"
 [tools]

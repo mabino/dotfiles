@@ -26,8 +26,9 @@ Or for completely unattended / silent automation:
 6. **Dotfiles via Yadm**: Clones the repository over SSH (`git@github.com:mabino/dotfiles.git`) with automatic HTTPS fallback.
 7. **Git Hooks & Merge Drivers**: Configures global Git hooks and registers the `brewfile-reconcile` union merge driver.
 8. **SSH Config Reconciliation**: Runs `ssh-reconcile sync` to generate `~/.ssh/config_local`.
-9. **Master AI Instructions**: Symlinks `~/.AGENT.md` to Claude (`CLAUDE.md`), Gemini (`GEMINI.md`), and Copilot (`copilot-instructions.md`).
-10. **Homebrew Package Bundle**: Installs all tracked CLI tools, packages, and GUI apps via `brew bundle --global`.
+9. **Oh My Zsh Setup**: Installs Oh My Zsh unattended with `robbyrussell` theme and git plugins without overriding your customized `.zshrc`.
+10. **Master AI Instructions**: Symlinks `~/.AGENT.md` to Claude (`CLAUDE.md`), Gemini (`GEMINI.md`), and Copilot (`copilot-instructions.md`).
+11. **Homebrew Package Bundle**: Installs all tracked CLI tools, packages, and GUI apps via `brew bundle --global`.
 
 ---
 

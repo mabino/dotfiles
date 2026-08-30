@@ -335,6 +335,15 @@ if [[ -f "$HOME/.AGENT.md" ]]; then
   log_success "AI instruction symlinks configured for Claude, Gemini, and Copilot."
 fi
 
+# Verify / Install Oh My Zsh
+if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+  log_info "Installing Oh My Zsh (unattended)..."
+  RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended >/dev/null 2>&1 || true
+  log_success "Oh My Zsh installed."
+else
+  log_success "Oh My Zsh active: $HOME/.oh-my-zsh"
+fi
+
 # --- Step 8: Homebrew Package Bundle ---
 if [[ "$SKIP_BREW" -eq 0 && -f "$HOME/.Brewfile" ]]; then
   log_info "Step 8/8: Installing Homebrew packages & developer toolchains..."

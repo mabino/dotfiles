@@ -8,9 +8,11 @@ export HOMEBREW_NO_ENV_HINTS=1
 export PATH="$HOME/.local/bin:$PATH"
 
 # --- Oh My Zsh Setup ---
-ZSH_THEME="robbyrussell"
-plugins=(git)
-source "$ZSH/oh-my-zsh.sh"
+if [[ -d "$ZSH" && -f "$ZSH/oh-my-zsh.sh" ]]; then
+  ZSH_THEME="robbyrussell"
+  plugins=(git)
+  source "$ZSH/oh-my-zsh.sh"
+fi
 
 # --- Tool Initializations ---
 # Homebrew lives at ~/.homebrew (preferred); fall back for machines not yet migrated.

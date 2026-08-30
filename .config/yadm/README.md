@@ -48,6 +48,11 @@ The `brew` command is wrapped in `~/.zshrc`.
 - **Union Merge Driver**: Custom `brewfile-reconcile` driver prevents package loss across multiple machines.
 - **Auto-Commit**: If changes are detected, `yadm` automatically commits and pushes the updated `Brewfile` to GitHub.
 
+### 🐚 Shell & Oh My Zsh
+- Automated unattended installation of **Oh My Zsh** during bootstrap.
+- Configured in `~/.zshrc` with `robbyrussell` theme and standard plugins.
+- Guarded to ensure shell starts smoothly even on systems before Oh My Zsh is installed.
+
 ### 🪝 Yadm Lifecycle Hooks
 Automated hooks in `~/.config/yadm/hooks/`:
 - **`post_pull`**: Automatically triggers `ssh-reconcile sync`, verifies the Brewfile merge driver, and refreshes AI symlinks upon pulling updates.

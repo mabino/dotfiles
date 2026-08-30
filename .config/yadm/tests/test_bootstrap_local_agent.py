@@ -96,7 +96,7 @@ class BootstrapLocalAgentTests(unittest.TestCase):
         self.assertIn('python = "3.12"', content)
         self.assertIn('OPENAI_API_BASE = "http://127.0.0.1:8000/v1"', content)
         self.assertIn('OPENAI_API_KEY = "omlx-local"', content)
-        self.assertIn('OPENAI_MODEL = "Qwen3-Coder-30B-Instruct-4bit"', content)
+        self.assertIn('OPENAI_MODEL = "Qwen3.8-27B-4bit"', content)
 
         if sys.platform == "darwin":
             st = os.stat(self.workspace_dir)

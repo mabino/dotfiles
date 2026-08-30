@@ -183,7 +183,7 @@ python = "3.12"
 [env]
 OPENAI_API_BASE = "http://127.0.0.1:8000/v1"
 OPENAI_API_KEY = "omlx-local"
-OPENAI_MODEL = "Qwen3-Coder-30B-Instruct-4bit"
+OPENAI_MODEL = "Qwen3.8-27B-4bit"
 EOF
 log_success "Created sandboxed ${WORKSPACE_DIR}/mise.toml"
 
@@ -210,7 +210,7 @@ if [[ "$DOWNLOAD_MODELS" == "1" ]]; then
 elif [[ "$DOWNLOAD_MODELS" == "0" ]]; then
   SHOULD_DOWNLOAD=0
 else
-  if prompt_confirm "Download local MLX model weights (~19GB: Qwen3-Coder 30B 4-bit + 0.5B draft) now?" 1; then
+  if prompt_confirm "Download local MLX model weights (~18GB: Qwen3.8 27B 4-bit + MTP draft) now?" 1; then
     SHOULD_DOWNLOAD=1
   fi
 fi
@@ -220,8 +220,8 @@ if [[ "$SHOULD_DOWNLOAD" -eq 1 ]]; then
   if [[ -x "$HOME/.local/bin/omlx-server" ]]; then
     "$HOME/.local/bin/omlx-server" download || log_warn "Model download could not complete automatically. Run 'omlx-server download' anytime."
   else
-    log_info "Target model: mlx-community/Qwen3-Coder-30B-Instruct-4bit"
-    log_info "Draft model:  mlx-community/Qwen3-Coder-0.5B-Instruct-4bit"
+    log_info "Target model: mlx-community/Qwen3.8-27B-4bit"
+    log_info "Draft model:  mlx-community/Qwen3.8-27B-MTP-4bit"
     log_info "You can download weights via 'omlx-server download'."
   fi
 else

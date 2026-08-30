@@ -12,9 +12,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-BOOTSTRAP_SCRIPT = REPO_ROOT / ".local" / "bin" / "bootstrap-local-agent"
-OMLX_SCRIPT = REPO_ROOT / ".local" / "bin" / "omlx-server"
+def get_script_path(name):
+    repo_path = Path(__file__).resolve().parents[3] / ".local" / "bin" / name
+    if repo_path.exists():
+        return repo_path
+    home_path = Path(os.path.expanduser(f"~/.local/bin/{name}"))
+    if home_path.exists():
+        return home_path
+    return repo_path
+
+BOOTSTRAP_SCRIPT = get_script_path("bootstrap-local-agent")
+OMLX_SCRIPT = get_script_path("omlx-server")
 
 
 class BootstrapLocalAgentTests(unittest.TestCase):
@@ -90,10 +98,37 @@ class BootstrapLocalAgentTests(unittest.TestCase):
         self.assertIn('OPENAI_API_KEY = "omlx-local"', content)
         self.assertIn('OPENAI_MODEL = "Qwen3-Coder-30B-Instruct-4bit"', content)
 
-    def test_low_memory_skip(self):
-        # Create a mock bin directory with a sysctl wrapper reporting 16GB
-        mock_bin = os.path.join(self.temp_dir.name, "mock_bin")
+    def test_non_darwin_skip(self):
+        mock_bin = os.path.join(self.temp_dir.name, "mock_bin_linux")
         os.makedirs(mock_bin, exist_ok=True)
+        uname_mock = os.path.join(mock_bin, "uname")
+        with open(uname_mock, "w", encoding="utf-8") as f:
+            f.write('#!/bin/sh\nif [ "$1" = "-m" ]; then echo "x86_64"; else echo "Linux"; fi\n')
+        os.chmod(uname_mock, stat.S_IRWXU)
+
+        env = dict(
+            os.environ,
+            PATH=f"{mock_bin}:{os.environ.get('PATH', '')}",
+            LOCAL_AGENT_DIR=self.workspace_dir,
+        )
+        res = subprocess.run(
+            [str(BOOTSTRAP_SCRIPT), "--silent"],
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("host is not Apple Silicon macOS", res.stdout)
+        self.assertFalse(os.path.exists(os.path.join(self.workspace_dir, "mise.toml")))
+
+    def test_low_memory_skip(self):
+        mock_bin = os.path.join(self.temp_dir.name, "mock_bin_darwin_low_mem")
+        os.makedirs(mock_bin, exist_ok=True)
+        uname_mock = os.path.join(mock_bin, "uname")
+        with open(uname_mock, "w", encoding="utf-8") as f:
+            f.write('#!/bin/sh\nif [ "$1" = "-m" ]; then echo "arm64"; else echo "Darwin"; fi\n')
+        os.chmod(uname_mock, stat.S_IRWXU)
+
         sysctl_mock = os.path.join(mock_bin, "sysctl")
         with open(sysctl_mock, "w", encoding="utf-8") as f:
             f.write("#!/bin/sh\necho 17179869184\n")  # 16 GB
@@ -112,7 +147,6 @@ class BootstrapLocalAgentTests(unittest.TestCase):
         )
         self.assertEqual(res.returncode, 0)
         self.assertIn("below 128GB threshold", res.stdout)
-        # Ensure workspace was NOT scaffolded
         self.assertFalse(os.path.exists(os.path.join(self.workspace_dir, "mise.toml")))
 
 

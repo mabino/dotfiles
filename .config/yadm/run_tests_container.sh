@@ -18,7 +18,7 @@ WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
 mkdir -p "$WORK_DIR/local/bin" "$WORK_DIR/config/yadm"
-cp "$SRC_BIN/brewfile-reconcile" "$SRC_BIN/ssh-reconcile" "$WORK_DIR/local/bin/"
+cp "$SRC_BIN"/* "$WORK_DIR/local/bin/"
 cp -R "$SCRIPT_DIR/tests" "$WORK_DIR/config/yadm/"
 cp "$SCRIPT_DIR/Dockerfile" "$WORK_DIR/"
 

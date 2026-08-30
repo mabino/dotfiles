@@ -157,14 +157,15 @@ alias start-omlx-server="$HOME/.local/bin/omlx-server start"
 alias stop-omlx-server="$HOME/.local/bin/omlx-server stop"
 alias restart-omlx-server="$HOME/.local/bin/omlx-server restart"
 alias status-omlx-server="$HOME/.local/bin/omlx-server status"
+alias update-pi-local="cd $HOME/local-coding-agent && mise exec -- npm install --silent @earendil-works/pi-coding-agent@latest"
 
 function pi-local() {
   (
     cd "$HOME/local-coding-agent" 2>/dev/null || { echo "local-coding-agent workspace not found at ~/local-coding-agent. Run bootstrap-local-agent." >&2; return 1; }
     if command -v mise >/dev/null 2>&1; then
-      mise exec -- npx pi --provider omlx --model "omlx/Qwen3.8-27B-4bit" "$@"
+      mise exec -- npx pi --provider omlx --model "omlx/mlx-community/Qwen3.8-27B-4bit" "$@"
     else
-      npx pi --provider omlx --model "omlx/Qwen3.8-27B-4bit" "$@"
+      npx pi --provider omlx --model "omlx/mlx-community/Qwen3.8-27B-4bit" "$@"
     fi
   )
 }

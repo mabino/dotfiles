@@ -127,24 +127,39 @@ if ! prompt_confirm "Deploy local oMLX + Pi coding agent stack on this machine?"
   exit 0
 fi
 
-# --- Step 2: Ensure Homebrew oMLX Engine & mise ---
-if command -v brew >/dev/null 2>&1; then
-  if ! brew tap | grep -q "^jundot/omlx$" 2>/dev/null; then
-    log_info "Tapping jundot/omlx..."
+# --- Step 2: Ensure oMLX / MLX Inference Engine & mise ---
+if command -v omlx >/dev/null 2>&1; then
+  log_success "oMLX engine active: $(command -v omlx)"
+elif command -v mlx_lm.server >/dev/null 2>&1; then
+  log_success "MLX inference engine active: $(command -v mlx_lm.server)"
+else
+  log_info "Attempting oMLX installation via Homebrew..."
+  if command -v brew >/dev/null 2>&1; then
     brew tap jundot/omlx 2>/dev/null || true
+    brew install jundot/omlx/omlx --HEAD 2>/dev/null || brew install jundot/omlx/omlx 2>/dev/null || true
   fi
 
-  if ! command -v omlx >/dev/null 2>&1; then
-    log_info "Installing oMLX inference engine via Homebrew..."
-    brew install jundot/omlx/omlx --HEAD 2>/dev/null || brew install jundot/omlx/omlx 2>/dev/null || log_warn "oMLX formula installation encountered an issue."
-  else
+  if ! command -v omlx >/dev/null 2>&1 && ! command -v mlx_lm.server >/dev/null 2>&1; then
+    log_info "Installing Apple Silicon MLX inference engine via uv..."
+    if command -v uv >/dev/null 2>&1; then
+      uv tool install --quiet mlx-lm >/dev/null 2>&1 || true
+    elif command -v pip3 >/dev/null 2>&1; then
+      pip3 install --quiet mlx-lm >/dev/null 2>&1 || true
+    fi
+  fi
+
+  if command -v omlx >/dev/null 2>&1; then
     log_success "oMLX engine active: $(command -v omlx)"
+  elif command -v mlx_lm.server >/dev/null 2>&1; then
+    log_success "MLX inference engine active: $(command -v mlx_lm.server)"
+  else
+    log_warn "MLX inference engine could not be installed automatically. Run 'uv tool install mlx-lm'."
   fi
+fi
 
-  if ! command -v mise >/dev/null 2>&1; then
-    log_info "Installing mise..."
-    brew install mise 2>/dev/null || true
-  fi
+if command -v brew >/dev/null 2>&1 && ! command -v mise >/dev/null 2>&1; then
+  log_info "Installing mise..."
+  brew install mise 2>/dev/null || true
 fi
 
 # --- Step 3: Scaffold Sandboxed Workspace (~/local-coding-agent) ---

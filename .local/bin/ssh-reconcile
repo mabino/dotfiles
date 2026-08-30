@@ -104,7 +104,9 @@ def get_machine_identifiers() -> List[str]:
             if res.returncode == 0:
                 match = re.search(r'"IOPlatformSerialNumber"\s*=\s*"([^"]+)"', res.stdout)
                 if match:
-                    _add(match.group(1))
+                    serial = match.group(1).strip()
+                    _add(f"FYB-{serial}")
+                    _add(serial)
         except Exception:
             pass
 

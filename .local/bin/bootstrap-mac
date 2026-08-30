@@ -100,7 +100,7 @@ echo
 
 # --- Step 1: Hardware Identification (FYB-<SerialNumber>) ---
 log_info "Step 1/8: Detecting hardware identification..."
-SERIAL="$(ioreg -l 2>/dev/null | awk -F'"' '/IOPlatformSerialNumber/{print $4}' || true)"
+SERIAL="$(ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F'"' '/IOPlatformSerialNumber/{print $4}' || true)"
 if [[ -n "$SERIAL" ]]; then
   MACHINE_ID="FYB-${SERIAL}"
   log_success "Detected machine identifier: ${BOLD}${MACHINE_ID}${RESET} (Serial: ${SERIAL})"
@@ -230,6 +230,9 @@ if [[ ! -f "$KEY_PATH" ]]; then
 fi
 
 chmod 600 "$KEY_PATH"
+if [[ -f "$KEY_PATH" && ! -f "${KEY_PATH}.pub" ]]; then
+  ssh-keygen -y -f "$KEY_PATH" > "${KEY_PATH}.pub" 2>/dev/null || true
+fi
 [[ -f "${KEY_PATH}.pub" ]] && chmod 644 "${KEY_PATH}.pub"
 
 # Make sure key is loaded in running agent

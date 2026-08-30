@@ -96,7 +96,7 @@ def get_machine_identifiers() -> List[str]:
 
         try:
             res = subprocess.run(
-                ["ioreg", "-l"],
+                ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
                 capture_output=True,
                 text=True,
                 timeout=2,

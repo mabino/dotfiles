@@ -209,6 +209,24 @@ cat << 'EOF' > "$HOME/.pi/agent/models.json"
           "contextWindow": 131072,
           "maxTokens": 32768,
           "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        },
+        {
+          "id": "mlx-community/Qwen3.8-27B-4bit",
+          "name": "Qwen 3.8 27B (mlx-community)",
+          "reasoning": false,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 32768,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        },
+        {
+          "id": "Qwen3.8-27B-4bit",
+          "name": "Qwen 3.8 27B",
+          "reasoning": false,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 32768,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
         }
       ]
     }
@@ -262,6 +280,12 @@ fi
 if [[ -d "$MODELS_DIR/Qwen3.8-27B-4bit" ]] && [[ -x "$HOME/.local/bin/omlx-server" ]]; then
   log_info "Validating Pi coding agent end-to-end inference against local MLX server..."
   "$HOME/.local/bin/omlx-server" start >/dev/null 2>&1 || true
+  for _ in {1..10}; do
+    if curl -s http://127.0.0.1:8000/v1/models >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
   test_resp=""
   if command -v mise >/dev/null 2>&1; then
     test_resp="$(cd "$WORKSPACE_DIR" && mise exec -- npx pi --provider omlx --model "omlx/default_model" -p "Respond with 'PI_LOCAL_OK'" 2>/dev/null || true)"

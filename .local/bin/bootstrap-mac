@@ -273,8 +273,16 @@ fi
 
 # Ensure core CLI dependencies are present via Homebrew
 if command -v brew >/dev/null 2>&1; then
-  log_info "Ensuring core tools (git, gh, yadm, uv) are installed..."
-  brew install git gh yadm uv >/dev/null 2>&1 || true
+  declare -a missing_core=()
+  command -v gh >/dev/null 2>&1 || missing_core+=(gh)
+  command -v yadm >/dev/null 2>&1 || missing_core+=(yadm)
+  command -v uv >/dev/null 2>&1 || missing_core+=(uv)
+  if [[ ${#missing_core[@]} -gt 0 ]]; then
+    log_info "Installing missing core tools (${missing_core[*]}) via Homebrew..."
+    brew install "${missing_core[@]}"
+  else
+    log_success "Core tools (gh, yadm, uv) are ready."
+  fi
 fi
 
 # --- Step 4: SSH Key Creation & Keychain Enrollment ---

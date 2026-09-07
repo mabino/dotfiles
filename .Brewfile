@@ -1,15 +1,6 @@
-# Container runtimes on MacOS (and Linux) with minimal setup
-brew "colima", restart_service: :changed
-# Pack, ship and run any application as a lightweight container
-brew "docker"
-# Play, record, convert, and stream select audio and video codecs
-brew "ffmpeg"
-# GitHub command-line tool
-brew "gh"
-# Tool to unpack installers created by Inno Setup
-brew "innoextract"
-# Yet Another Dotfiles Manager
-brew "yadm"
+tap "stupside/tap", trusted: { casks: ["castor"] }
+# Simple, modern, secure file encryption
+brew "age"
 # Mozilla CA certificate store
 brew "ca-certificates"
 # Mozilla CA bundle for Python
@@ -24,18 +15,26 @@ brew "bats-core"
 brew "cloudflare-cli4"
 # Cross-platform make
 brew "cmake"
+# Container runtimes on MacOS (and Linux) with minimal setup
+brew "colima", restart_service: :changed
 # TIFF library and utilities
 brew "libtiff"
+# Pack, ship and run any application as a lightweight container
+brew "docker"
 # Docker CLI plugin for extended build capabilities with BuildKit
 brew "docker-buildx"
 # Isolated development environments using Docker
 brew "docker-compose"
 # SDL2 compatibility layer that uses SDL3 behind the scenes
 brew "sdl2-compat"
+# Play, record, convert, and stream select audio and video codecs
+brew "ffmpeg"
 # CLI application for interacting with a Cloudflare account
 brew "flarectl"
 # Multi-agent workspace manager
 brew "gastown"
+# GitHub command-line tool
+brew "gh"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
 # Quickly rewrite git repository history
@@ -44,6 +43,8 @@ brew "git-filter-repo"
 brew "go"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
+# Tool to unpack installers created by Inno Setup
+brew "innoextract"
 # Lynx-like WWW browser that supports tables, menus, etc.
 brew "links"
 # CLI for the Linode API
@@ -70,12 +71,14 @@ brew "rustup"
 brew "scrcpy"
 # Terminal multiplexer
 brew "tmux"
-# Extremely fast Python package and project manager, written in Rust
+# Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
 # Executes a program periodically, showing output fullscreen
 brew "watch"
 # Generate your Xcode project from a spec file and your folder structure
 brew "xcodegen"
+# Yet Another Dotfiles Manager
+brew "yadm"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
@@ -86,8 +89,7 @@ cask "antigravity-cli"
 cask "claude-code"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
-# Google Chromium, sans integration with Google
-cask "ungoogled-chromium"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
-tap "stupside/tap", trusted: { casks: ["castor"] }
+# Google Chromium, sans integration with Google
+cask "ungoogled-chromium"

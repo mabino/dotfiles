@@ -93,6 +93,8 @@ brew "uv"
 brew "age"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
+# Terminal-based AI coding assistant
+cask "claude-code@latest"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
 # Set of tools to manage resources and applications hosted on Google Cloud

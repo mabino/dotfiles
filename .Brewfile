@@ -93,6 +93,8 @@ brew "git"
 brew "pi-coding-agent"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
+# Terminal-based AI coding assistant
+cask "claude-code@latest"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
 # Set of tools to manage resources and applications hosted on Google Cloud
@@ -101,8 +103,6 @@ cask "gcloud-cli"
 cask "google-chrome"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
-# Terminal-based AI coding assistant
-cask "claude-code@latest"
 npm "corepack"
 uv "agy-swap"
 uv "huggingface-hub"

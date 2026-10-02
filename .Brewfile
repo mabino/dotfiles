@@ -1,6 +1,4 @@
 tap "stupside/tap", trusted: { casks: ["castor"] }
-# Simple, modern, secure file encryption
-brew "age"
 # Mozilla CA certificate store
 brew "ca-certificates"
 # Mozilla CA bundle for Python
@@ -37,6 +35,8 @@ brew "gastown"
 brew "gh"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
+# Distributed revision control system
+brew "git"
 # Quickly rewrite git repository history
 brew "git-filter-repo"
 # Open source programming language to build simple/reliable/efficient software
@@ -55,10 +55,14 @@ brew "llama.cpp"
 brew "llvm"
 # Create and manage Apple Silicon-native virtual machines
 brew "lume"
+# Sudoless performance monitoring for Apple Silicon processors
+brew "macmon"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
 # Create, run, and share large language models (LLMs)
 brew "ollama"
+# AI agent toolkit
+brew "pi-coding-agent"
 # Multi-agent orchestration framework for autonomous AI task completion
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
@@ -83,29 +87,29 @@ brew "yadm"
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# Simple, modern, secure file encryption
+brew "age"
 # DOSBox with accurate emulation and wide testing
 brew "dosbox-x"
 # Interact with Google Gemini AI models from the command-line
 brew "gemini-cli"
-# Distributed revision control system
-brew "git"
-# AI agent toolkit
-brew "pi-coding-agent"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
 # Terminal-based AI coding assistant
-cask "claude-code@latest"
+cask "claude-code"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
-# Web browser
-cask "google-chrome"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
-npm "corepack"
-uv "agy-swap"
-uv "huggingface-hub"
-uv "mlx-lm"
+# Terminal-based AI coding assistant
+cask "claude-code@latest"
+# Web browser
+cask "google-chrome"
 cargo "goboscript", source: "https://github.com/aspizu/goboscript"
 cargo "sb2gs-cli", source: "https://github.com/aspizu/sb2gs"
+uv "huggingface-hub"
+uv "mlx-lm"
+npm "corepack"
+uv "agy-swap"

@@ -6,7 +6,7 @@ brew "ca-certificates"
 # Mozilla CA bundle for Python
 brew "certifi"
 # Cryptography and SSL/TLS Toolkit
-brew "openssl@3"
+brew "openssl@3", link: true
 # Automate deployment, configuration, and upgrading
 brew "ansible"
 # Bash Automated Testing System

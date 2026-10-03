@@ -55,6 +55,8 @@ brew "llama.cpp"
 brew "llvm"
 # Create and manage Apple Silicon-native virtual machines
 brew "lume"
+# GNU Binutils for m68k-elf cross development
+brew "m68k-elf-binutils"
 # Sudoless performance monitoring for Apple Silicon processors
 brew "macmon"
 # Polyglot runtime manager (asdf rust clone)

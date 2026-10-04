@@ -25,26 +25,34 @@ brew "docker-buildx"
 brew "docker-compose"
 # SDL2 compatibility layer that uses SDL3 behind the scenes
 brew "sdl2-compat"
+# DOSBox with accurate emulation and wide testing
+brew "dosbox-x"
 # Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
 # CLI application for interacting with a Cloudflare account
 brew "flarectl"
 # Multi-agent workspace manager
 brew "gastown"
+# Interact with Google Gemini AI models from the command-line
+brew "gemini-cli"
 # GitHub command-line tool
 brew "gh"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
-# Distributed revision control system
-brew "git"
 # Quickly rewrite git repository history
 brew "git-filter-repo"
+# Library to load and enumerate PKCS#11 modules
+brew "p11-kit"
+# GNU Transport Layer Security (TLS) Library
+brew "gnutls"
 # Open source programming language to build simple/reliable/efficient software
 brew "go"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
 # Tool to unpack installers created by Inno Setup
 brew "innoextract"
+# GNOME XML library
+brew "libxml2"
 # Lynx-like WWW browser that supports tables, menus, etc.
 brew "links"
 # CLI for the Linode API
@@ -55,16 +63,10 @@ brew "llama.cpp"
 brew "llvm"
 # Create and manage Apple Silicon-native virtual machines
 brew "lume"
-# GNU Binutils for m68k-elf cross development
-brew "m68k-elf-binutils"
-# Sudoless performance monitoring for Apple Silicon processors
-brew "macmon"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
 # Create, run, and share large language models (LLMs)
 brew "ollama"
-# AI agent toolkit
-brew "pi-coding-agent"
 # Multi-agent orchestration framework for autonomous AI task completion
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
@@ -77,8 +79,6 @@ brew "rustup"
 brew "scrcpy"
 # Terminal multiplexer
 brew "tmux"
-# Extremely fast Python package installer and resolver, written in Rust
-brew "uv"
 # Executes a program periodically, showing output fullscreen
 brew "watch"
 # Generate your Xcode project from a spec file and your folder structure
@@ -89,16 +89,22 @@ brew "yadm"
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# Distributed revision control system
+brew "git"
+# GNU Binutils for m68k-elf cross development
+brew "m68k-elf-binutils"
+# Sudoless performance monitoring for Apple Silicon processors
+brew "macmon"
+# AI agent toolkit
+brew "pi-coding-agent"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
 # Simple, modern, secure file encryption
 brew "age"
-# DOSBox with accurate emulation and wide testing
-brew "dosbox-x"
-# Interact with Google Gemini AI models from the command-line
-brew "gemini-cli"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
 # Terminal-based AI coding assistant
-cask "claude-code"
+cask "claude-code@latest"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
 # Set of tools to manage resources and applications hosted on Google Cloud
@@ -106,12 +112,12 @@ cask "gcloud-cli"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
 # Terminal-based AI coding assistant
-cask "claude-code@latest"
+cask "claude-code"
 # Web browser
 cask "google-chrome"
 cargo "goboscript", source: "https://github.com/aspizu/goboscript"
 cargo "sb2gs-cli", source: "https://github.com/aspizu/sb2gs"
+uv "agy-swap"
 uv "huggingface-hub"
 uv "mlx-lm"
 npm "corepack"
-uv "agy-swap"

@@ -19,6 +19,8 @@ brew "colima", restart_service: :changed
 brew "libtiff"
 # Pack, ship and run any application as a lightweight container
 brew "docker"
+# Agent Builder and Runtime by Docker Engineering
+brew "docker-agent"
 # Docker CLI plugin for extended build capabilities with BuildKit
 brew "docker-buildx"
 # Isolated development environments using Docker

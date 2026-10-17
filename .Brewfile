@@ -11,6 +11,8 @@ brew "openssl@3", link: true
 brew "ansible"
 # Bash Automated Testing System
 brew "bats-core"
+# Convert CD images from .bin/.cue to .iso/.cdr
+brew "bchunk"
 # CLI for Cloudflare API v4
 brew "cloudflare-cli4"
 # Cross-platform make

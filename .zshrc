@@ -163,3 +163,6 @@ alias update-pi-local="cd $HOME/local-coding-agent && mise exec -- npm install -
 
 [[ -n "$HOMEBREW_PREFIX" && -d "$HOMEBREW_PREFIX/opt/rustup/bin" ]] && export PATH="$HOMEBREW_PREFIX/opt/rustup/bin:$PATH"
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+
+# Added by MTPLX.app — terminal command
+export PATH="$HOME/.mtplx/bin:$PATH"

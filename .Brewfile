@@ -1,3 +1,4 @@
+tap "anomalyco/tap"
 tap "stupside/tap", trusted: { casks: ["castor"] }
 # Simple, modern, secure file encryption
 brew "age"
@@ -6,7 +7,7 @@ brew "ca-certificates"
 # Mozilla CA bundle for Python
 brew "certifi"
 # Cryptography and SSL/TLS Toolkit
-brew "openssl@3", link: true
+brew "openssl@3"
 # Automate deployment, configuration, and upgrading
 brew "ansible"
 # Bash Automated Testing System
@@ -87,6 +88,8 @@ brew "yadm"
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# The AI coding agent built for the terminal.
+brew "anomalyco/tap/opencode", trusted: true
 # Agent Builder and Runtime by Docker Engineering
 brew "docker-agent"
 # Distributed revision control system

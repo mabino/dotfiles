@@ -6,8 +6,6 @@ brew "age"
 brew "ca-certificates"
 # Mozilla CA bundle for Python
 brew "certifi"
-# Cryptography and SSL/TLS Toolkit
-brew "openssl@3"
 # Automate deployment, configuration, and upgrading
 brew "ansible"
 # Bash Automated Testing System
@@ -62,6 +60,8 @@ brew "lume"
 brew "mise"
 # Create, run, and share large language models (LLMs)
 brew "ollama"
+# Cryptography and SSL/TLS Toolkit
+brew "openssl@3"
 # Multi-agent orchestration framework for autonomous AI task completion
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
@@ -74,6 +74,8 @@ brew "rustup"
 brew "scrcpy"
 # Terminal multiplexer
 brew "tmux"
+# Vulnerability scanner for container images, file systems, and Git repos
+brew "trivy"
 # Command-line unarchiving tools supporting multiple formats
 brew "unar"
 # Extremely fast Python package installer and resolver, written in Rust
@@ -88,6 +90,8 @@ brew "yadm"
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# OpenCode V2 - the AI coding agent for the terminal
+brew "anomalyco/tap/opencode-v2", trusted: true
 # The AI coding agent built for the terminal.
 brew "anomalyco/tap/opencode", trusted: true
 # Agent Builder and Runtime by Docker Engineering

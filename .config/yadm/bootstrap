@@ -30,9 +30,9 @@ if command -v ssh-reconcile >/dev/null 2>&1; then
 fi
 
 mkdir -p "$HOME/.claude" "$HOME/.gemini" "$HOME/.copilot"
-[[ -L "$HOME/.claude/CLAUDE.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.claude/CLAUDE.md"
-[[ -L "$HOME/.gemini/GEMINI.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.gemini/GEMINI.md"
-[[ -L "$HOME/.copilot/copilot-instructions.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.copilot/copilot-instructions.md"
+[[ -L "$HOME/.claude/CLAUDE.md" ]] || ln -sf "$HOME/.AGENTS.md" "$HOME/.claude/CLAUDE.md"
+[[ -L "$HOME/.gemini/GEMINI.md" ]] || ln -sf "$HOME/.AGENTS.md" "$HOME/.gemini/GEMINI.md"
+[[ -L "$HOME/.copilot/copilot-instructions.md" ]] || ln -sf "$HOME/.AGENTS.md" "$HOME/.copilot/copilot-instructions.md"
 
 if command -v brew >/dev/null 2>&1 && [[ -f "$HOME/.Brewfile" ]]; then
   brew bundle --global || true

@@ -44,11 +44,11 @@ To handle multiple devices with unique private keys safely and persist passphras
 
 ### 🤖 AI Agent Strategy ("Master & Proxy")
 To maintain a "Single Source of Truth" across multiple AI assistants (Claude, Gemini, etc.), I use a master configuration:
-- **Master File**: `~/.AGENT.md` contains all global engineering standards and preferences.
+- **Master File**: `~/.AGENTS.md` contains all global engineering standards and preferences.
 - **Symlinks**: 
-  - `~/.claude/CLAUDE.md` -> `~/.AGENT.md`
-  - `~/.gemini/GEMINI.md` -> `~/.AGENT.md`
-  - `~/.copilot/copilot-instructions.md` -> `~/.AGENT.md`
+  - `~/.claude/CLAUDE.md` -> `~/.AGENTS.md`
+  - `~/.gemini/GEMINI.md` -> `~/.AGENTS.md`
+  - `~/.copilot/copilot-instructions.md` -> `~/.AGENTS.md`
 - **Benefit**: Update your preferences once in `~/.AGENT.md`, and every AI assistant instantly inherits the changes.
 
 ### 📦 Homebrew Automation

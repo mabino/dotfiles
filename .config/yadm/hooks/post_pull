@@ -21,7 +21,7 @@ fi
 
 # 3. Ensure AI assistant symlinks exist
 mkdir -p "$HOME/.claude" "$HOME/.gemini"
-[[ -L "$HOME/.claude/CLAUDE.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.claude/CLAUDE.md"
-[[ -L "$HOME/.gemini/GEMINI.md" ]] || ln -sf "$HOME/.AGENT.md" "$HOME/.gemini/GEMINI.md"
+[[ -L "$HOME/.claude/CLAUDE.md" ]] || ln -sf "$HOME/.AGENTS.md" "$HOME/.claude/CLAUDE.md"
+[[ -L "$HOME/.gemini/GEMINI.md" ]] || ln -sf "$HOME/.AGENTS.md" "$HOME/.gemini/GEMINI.md"
 
 exit 0

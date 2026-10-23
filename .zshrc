@@ -7,7 +7,7 @@ export PATH="$HOME/.local/bin:$PATH"
 if [[ -n $HOMEBREW_PREFIX && ! -x $HOMEBREW_PREFIX/bin/brew ]]; then
   unset HOMEBREW_PREFIX HOMEBREW_CELLAR HOMEBREW_REPOSITORY
 fi
-for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew; do
+for _brew in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
   if [[ -x $_brew ]]; then
     eval "$($_brew shellenv)"
     [[ ":$PATH:" == *":${_brew%/brew}:"* ]] || export PATH="${_brew%/brew}:$PATH"

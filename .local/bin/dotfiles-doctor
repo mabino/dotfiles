@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# ~/.local/bin/dotfiles-doctor
+# Health check for dotfiles configuration
+
+set -euo pipefail
+
+# --- Color helpers ---
+BOLD="\033[1m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+log_success() { echo -e "${GREEN}${BOLD}✓${RESET} ${GREEN}$*${RESET}"; }
+log_warn()    { echo -e "${YELLOW}${BOLD}⚠${RESET} ${YELLOW}$*${RESET}"; }
+log_error()   { echo -e "${RED}${BOLD}✗${RESET} ${RED}$*${RESET}"; }
+log_info()    { echo -e "${BOLD}==>${RESET} ${BOLD}$*${RESET}"; }
+
+echo -e "${BOLD}🔍 Dotfiles Health Check${RESET}"
+echo "================================"
+
+# 1. Check yadm repository
+log_info "Checking yadm repository..."
+if command -v yadm >/dev/null 2>&1; then
+    if yadm status --short >/dev/null 2>&1; then
+        log_success "yadm repository is clean"
+    else
+        log_warn "yadm repository has uncommitted changes"
+        yadm status --short
+    fi
+else
+    log_error "yadm not found in PATH"
+fi
+
+# 2. Check AI agent symlinks
+log_info "Checking AI agent symlinks..."
+declare -a symlinks=(
+    ".claude/CLAUDE.md"
+    ".gemini/GEMINI.md"
+    ".copilot/copilot-instructions.md"
+)
+
+all_good=true
+for symlink in "${symlinks[@]}"; do
+    if [[ -L "$HOME/$symlink" ]]; then
+        target="$(readlink -f "$HOME/$symlink")"
+        if [[ "$target" == "$HOME/.AGENTS.md" ]]; then
+            log_success "$symlink → .AGENTS.md"
+        else
+            log_error "$symlink → $target (should be .AGENTS.md)"
+            all_good=false
+        fi
+    else
+        log_error "$symlink is not a symlink"
+        all_good=false
+    fi
+done
+
+if $all_good; then
+    log_success "All AI agent symlinks are correct"
+fi
+
+# 3. Check SSH configuration
+log_info "Checking SSH configuration..."
+if [[ -f "$HOME/.ssh/config_local" ]]; then
+    log_success "SSH config_local exists"
+else
+    log_warn "SSH config_local missing (run: ssh-reconcile setup)"
+fi
+
+# 4. Check custom tools
+log_info "Checking custom tools..."
+declare -a tools=(
+    "brewfile-reconcile"
+    "ssh-reconcile"
+    "bootstrap-mac"
+)
+
+for tool in "${tools[@]}"; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        log_success "$tool is available"
+    else
+        log_error "$tool not found in PATH"
+    fi
+done
+
+# 5. Check test suite
+log_info "Checking test suite..."
+if [[ -d "$HOME/.config/yadm/tests" ]]; then
+    count=$(find "$HOME/.config/yadm/tests" -name "test_*.py" | wc -l | tr -d ' ')
+    log_success "Found $count test files"
+else
+    log_error "Test directory not found"
+fi
+
+# 6. Check Homebrew
+log_info "Checking Homebrew..."
+if command -v brew >/dev/null 2>&1; then
+    log_success "Homebrew is installed"
+    if [[ -f "$HOME/.Brewfile" ]]; then
+        log_success "Brewfile exists"
+    else
+        log_warn "Brewfile missing"
+    fi
+else
+    log_warn "Homebrew not found"
+fi
+
+# 7. Check git hooks
+log_info "Checking git hooks..."
+if [[ -d "$HOME/.config/git/hooks" ]]; then
+    hook_count=$(find "$HOME/.config/git/hooks" -type f -name "*" | wc -l | tr -d ' ')
+    log_success "Found $hook_count git hooks"
+else
+    log_error "Git hooks directory missing"
+fi
+
+echo ""
+echo -e "${BOLD}📊 Summary${RESET}"
+echo "=========="
+echo "Run individual checks with:"
+echo "  ssh-reconcile status    # SSH key status"
+echo "  yadm status             # Repository status"
+echo "  python3 -m unittest discover ~/.config/yadm/tests  # Run tests"
+echo ""
+echo "For repair:"
+echo "  yadm bootstrap          # Re-run bootstrap"
+echo "  ssh-reconcile enroll    # Re-enroll SSH keys"
+echo "  brew bundle             # Install packages"

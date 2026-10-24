@@ -44,6 +44,8 @@ brew "git-filter-repo"
 brew "go"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
+# Agent multiplexer that lives in your terminal
+brew "herdr"
 # Tool to unpack installers created by Inno Setup
 brew "innoextract"
 # Lynx-like WWW browser that supports tables, menus, etc.
@@ -59,7 +61,7 @@ brew "lume"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
 # Create, run, and share large language models (LLMs)
-brew "ollama"
+brew "ollama", restart_service: :changed
 # Cryptography and SSL/TLS Toolkit
 brew "openssl@3"
 # Multi-agent orchestration framework for autonomous AI task completion

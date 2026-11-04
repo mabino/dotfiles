@@ -1,4 +1,5 @@
 tap "anomalyco/tap"
+tap "frankea/whisky"
 tap "stupside/tap", trusted: { casks: ["castor"] }
 # Simple, modern, secure file encryption
 brew "age"
@@ -64,6 +65,8 @@ brew "mise"
 brew "ollama", restart_service: :changed
 # Cryptography and SSL/TLS Toolkit
 brew "openssl@3"
+# Convert bitmaps to vector graphics
+brew "potrace"
 # Multi-agent orchestration framework for autonomous AI task completion
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
@@ -80,6 +83,8 @@ brew "tmux"
 brew "trivy"
 # Command-line unarchiving tools supporting multiple formats
 brew "unar"
+# Extract files from InstallShield cabinet files
+brew "unshield"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
 # Executes a program periodically, showing output fullscreen
@@ -130,9 +135,11 @@ cask "gcloud-cli"
 cask "google-chrome"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
+# Active community fork of the archived Wine wrapper
+cask "frankea/whisky/whisky", trusted: true
+uv "mlx-lm"
 npm "corepack"
 uv "huggingface-hub"
-uv "mlx-lm"
 uv "agy-swap"
 cargo "goboscript", source: "https://github.com/aspizu/goboscript"
 cargo "sb2gs-cli", source: "https://github.com/aspizu/sb2gs"

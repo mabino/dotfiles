@@ -1,18 +1,16 @@
+tap "stupside/tap", trusted: { casks: ["castor"] }
 tap "anomalyco/tap"
 tap "frankea/whisky"
-tap "stupside/tap", trusted: { casks: ["castor"] }
-# Simple, modern, secure file encryption
-brew "age"
 # Mozilla CA certificate store
 brew "ca-certificates"
 # Mozilla CA bundle for Python
 brew "certifi"
+# Cryptography and SSL/TLS Toolkit
+brew "openssl@3", link: true
 # Automate deployment, configuration, and upgrading
 brew "ansible"
 # Bash Automated Testing System
 brew "bats-core"
-# Convert CD images from .bin/.cue to .iso/.cdr
-brew "bchunk"
 # CLI for Cloudflare API v4
 brew "cloudflare-cli4"
 # Cross-platform make
@@ -29,26 +27,34 @@ brew "docker-buildx"
 brew "docker-compose"
 # SDL2 compatibility layer that uses SDL3 behind the scenes
 brew "sdl2-compat"
+# DOSBox with accurate emulation and wide testing
+brew "dosbox-x"
 # Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
 # CLI application for interacting with a Cloudflare account
 brew "flarectl"
 # Multi-agent workspace manager
 brew "gastown"
+# Interact with Google Gemini AI models from the command-line
+brew "gemini-cli"
 # GitHub command-line tool
 brew "gh"
 # Interpreter for PostScript and PDF
 brew "ghostscript"
 # Quickly rewrite git repository history
 brew "git-filter-repo"
+# Library to load and enumerate PKCS#11 modules
+brew "p11-kit"
+# GNU Transport Layer Security (TLS) Library
+brew "gnutls"
 # Open source programming language to build simple/reliable/efficient software
 brew "go"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
 brew "googleworkspace-cli"
-# Agent multiplexer that lives in your terminal
-brew "herdr"
 # Tool to unpack installers created by Inno Setup
 brew "innoextract"
+# GNOME XML library
+brew "libxml2"
 # Lynx-like WWW browser that supports tables, menus, etc.
 brew "links"
 # CLI for the Linode API
@@ -62,11 +68,7 @@ brew "lume"
 # Polyglot runtime manager (asdf rust clone)
 brew "mise"
 # Create, run, and share large language models (LLMs)
-brew "ollama", restart_service: :changed
-# Cryptography and SSL/TLS Toolkit
-brew "openssl@3"
-# Convert bitmaps to vector graphics
-brew "potrace"
+brew "ollama"
 # Multi-agent orchestration framework for autonomous AI task completion
 brew "ralph-orchestrator"
 # Search tool like grep and The Silver Searcher
@@ -79,14 +81,6 @@ brew "rustup"
 brew "scrcpy"
 # Terminal multiplexer
 brew "tmux"
-# Vulnerability scanner for container images, file systems, and Git repos
-brew "trivy"
-# Command-line unarchiving tools supporting multiple formats
-brew "unar"
-# Extract files from InstallShield cabinet files
-brew "unshield"
-# Extremely fast Python package installer and resolver, written in Rust
-brew "uv"
 # Executes a program periodically, showing output fullscreen
 brew "watch"
 # Generate your Xcode project from a spec file and your folder structure
@@ -97,6 +91,22 @@ brew "yadm"
 brew "yt-dlp"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
+# Simple, modern, secure file encryption
+brew "age"
+# Convert CD images from .bin/.cue to .iso/.cdr
+brew "bchunk"
+# Agent multiplexer that lives in your terminal
+brew "herdr"
+# Convert bitmaps to vector graphics
+brew "potrace"
+# Vulnerability scanner for container images, file systems, and Git repos
+brew "trivy"
+# Command-line unarchiving tools supporting multiple formats
+brew "unar"
+# Extract files from InstallShield cabinet files
+brew "unshield"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
 # OpenCode V2 - the AI coding agent for the terminal
 brew "anomalyco/tap/opencode-v2", trusted: true
 # The AI coding agent built for the terminal.
@@ -111,35 +121,25 @@ brew "m68k-elf-binutils"
 brew "macmon"
 # AI agent toolkit
 brew "pi-coding-agent"
-# DOSBox with accurate emulation and wide testing
-brew "dosbox-x"
-# Interact with Google Gemini AI models from the command-line
-brew "gemini-cli"
-# Library to load and enumerate PKCS#11 modules
-brew "p11-kit"
-# GNU Transport Layer Security (TLS) Library
-brew "gnutls"
-# GNOME XML library
-brew "libxml2"
 # Terminal interface for Antigravity agents
 cask "antigravity-cli"
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
-# OpenAI's coding agent that runs in your terminal
-cask "codex"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
-# Web browser
-cask "google-chrome"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
+# OpenAI's coding agent that runs in your terminal
+cask "codex"
+# Web browser
+cask "google-chrome"
 # Active community fork of the archived Wine wrapper
 cask "frankea/whisky/whisky", trusted: true
+cargo "goboscript", source: "https://github.com/aspizu/goboscript"
+cargo "sb2gs-cli", source: "https://github.com/aspizu/sb2gs"
+uv "agy-swap"
 uv "mlx-lm"
 npm "corepack"
 uv "huggingface-hub"
-uv "agy-swap"
-cargo "goboscript", source: "https://github.com/aspizu/goboscript"
-cargo "sb2gs-cli", source: "https://github.com/aspizu/sb2gs"

@@ -121,8 +121,6 @@ brew "m68k-elf-binutils"
 brew "macmon"
 # AI agent toolkit
 brew "pi-coding-agent"
-# Terminal interface for Antigravity agents
-cask "antigravity-cli"
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
 # OpenAI's coding agent that runs in your terminal
@@ -137,6 +135,8 @@ cask "google-chrome"
 cask "ungoogled-chromium"
 # Active community fork of the archived Wine wrapper
 cask "frankea/whisky/whisky", trusted: true
+# Terminal interface for Antigravity agents
+cask "antigravity-cli"
 uv "mlx-lm"
 npm "corepack"
 uv "agy-swap"

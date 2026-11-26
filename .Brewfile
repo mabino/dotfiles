@@ -121,18 +121,18 @@ brew "m68k-elf-binutils"
 brew "macmon"
 # AI agent toolkit
 brew "pi-coding-agent"
-# Terminal interface for Antigravity agents
-cask "antigravity-cli"
 # Terminal-based AI coding assistant
 cask "claude-code@latest"
+# OpenAI's coding agent that runs in your terminal
+cask "codex"
 # Brings the power of Copilot coding agent directly to your terminal
 cask "copilot-cli"
 # Set of tools to manage resources and applications hosted on Google Cloud
 cask "gcloud-cli"
 # Google Chromium, sans integration with Google
 cask "ungoogled-chromium"
-# OpenAI's coding agent that runs in your terminal
-cask "codex"
+# Terminal interface for Antigravity agents
+cask "antigravity-cli"
 # Web browser
 cask "google-chrome"
 # Active community fork of the archived Wine wrapper

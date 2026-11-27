@@ -25,6 +25,9 @@ log_error()   { echo -e "${RED}${BOLD}✖${RESET} ${RED}$*${RESET}" >&2; }
 SKIP_LOCAL_AGENT=0
 SKIP_TOUCHID=0
 SKIP_PULL=0
+KEEP_SCRIPT=0
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+[[ "$SCRIPT_PATH" != /* ]] && SCRIPT_PATH="$PWD/$SCRIPT_PATH"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -40,18 +43,23 @@ while [[ $# -gt 0 ]]; do
       SKIP_PULL=1
       shift
       ;;
+    --keep)
+      KEEP_SCRIPT=1
+      shift
+      ;;
     -h|--help)
       cat <<EOF
 Usage: migrate-homebrew-prefix [OPTIONS]
 
 Migrates Homebrew from ~/.homebrew to /opt/homebrew (keeping ~/.homebrew as a
 symlink alias) and optionally enables Touch ID for sudo (/etc/pam.d/sudo_local).
-Exits immediately if the machine is already migrated.
+Self-deletes locally (hiding from yadm status via skip-worktree) once verified.
 
 Options:
   --skip-local-agent   Pass --skip-local-agent to bootstrap-mac
   --skip-touchid       Skip optional Touch ID sudo configuration
   --skip-pull          Skip 'yadm pull' before migrating
+  --keep               Do not delete this script locally after finishing
   -h, --help           Show this help message
 EOF
       exit 0
@@ -110,6 +118,17 @@ configure_touchid() {
   fi
 }
 
+self_delete() {
+  if [[ "$KEEP_SCRIPT" -eq 1 ]]; then
+    return 0
+  fi
+  if command -v yadm >/dev/null 2>&1 && yadm ls-files --error-unmatch "$SCRIPT_PATH" >/dev/null 2>&1; then
+    yadm update-index --skip-worktree "$SCRIPT_PATH" 2>/dev/null || true
+  fi
+  rm -f "$SCRIPT_PATH"
+  log_info "Removed $SCRIPT_PATH locally (yadm status remains clean)."
+}
+
 # --- Step 1: Pull latest dotfiles ---
 if [[ "$SKIP_PULL" -eq 0 ]] && command -v yadm >/dev/null 2>&1 && yadm rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   log_info "Step 1/4: Pulling latest yadm dotfiles..."
@@ -123,6 +142,7 @@ if [[ -x "/opt/homebrew/bin/brew" && -L "$HOME/.homebrew" && "$(readlink "$HOME/
   log_success "Homebrew is already migrated to /opt/homebrew (with ~/.homebrew -> /opt/homebrew)."
   configure_touchid
   log_success "Machine is up to date. Nothing to migrate."
+  self_delete
   exit 0
 fi
 
@@ -194,6 +214,7 @@ if [[ "$_prefix" == "/opt/homebrew" && "$_link" == "/opt/homebrew" ]]; then
     log_success "opencode: $(/opt/homebrew/bin/opencode --version 2>/dev/null || echo installed)"
   fi
   touchid_enabled && log_success "Touch ID sudo: enabled" || log_info "Touch ID sudo: not enabled"
+  self_delete
   echo
   log_info "Run 'exec zsh' (or open a new terminal) to reload your shell PATH."
 else

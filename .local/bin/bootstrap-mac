@@ -50,6 +50,7 @@ SILENT=0
 SKIP_BREW=0
 SKIP_XCODE=0
 SKIP_LOCAL_AGENT=0
+SKIP_TOUCHID=0
 CUSTOM_KEY=""
 RESET_ENV=0
 REINSTALL=0
@@ -81,6 +82,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_LOCAL_AGENT=1
       shift
       ;;
+    --skip-touchid)
+      SKIP_TOUCHID=1
+      shift
+      ;;
     --key|--ssh-key-name)
       CUSTOM_KEY="$2"
       shift 2
@@ -98,6 +103,7 @@ Options:
   --skip-brew                 Skip 'brew bundle' package installations
   --skip-xcode                Skip Xcode Command Line Tools verification
   --skip-local-agent          Skip local oMLX + Pi coding agent stack setup
+  --skip-touchid              Skip optional Touch ID for sudo configuration
   --ssh-key-name <NAME>       Specify a custom SSH key filename
   -h, --help                  Show this help message
 EOF
@@ -246,10 +252,46 @@ if [[ "$SKIP_XCODE" -eq 0 && "$(uname -s)" == "Darwin" ]]; then
   fi
 fi
 
+# --- Optional: Touch ID for sudo (persists across macOS updates via /etc/pam.d/sudo_local) ---
+if [[ "$SKIP_TOUCHID" -eq 0 && "$(uname -s)" == "Darwin" && -f "/etc/pam.d/sudo_local.template" ]]; then
+  if grep -Eq '^[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' /etc/pam.d/sudo_local 2>/dev/null; then
+    log_success "Touch ID for sudo is already enabled (/etc/pam.d/sudo_local)."
+  else
+    _can_sudo_touchid=0
+    if sudo -n true 2>/dev/null; then
+      _can_sudo_touchid=1
+    elif [[ "$SILENT" -eq 0 && -r /dev/tty ]] && dseditgroup -o checkmember -m "$USER" admin >/dev/null 2>&1; then
+      if prompt_confirm "Enable optional Touch ID for sudo (/etc/pam.d/sudo_local)?" 1; then
+        _can_sudo_touchid=1
+      fi
+    fi
+
+    if [[ "$_can_sudo_touchid" -eq 1 ]]; then
+      _tmp_sudo_local="$(mktemp)"
+      CLEANUP_FILES+=("$_tmp_sudo_local")
+      if [[ -f "/etc/pam.d/sudo_local" ]]; then
+        cp /etc/pam.d/sudo_local "$_tmp_sudo_local"
+        printf '\nauth       sufficient     pam_tid.so\n' >> "$_tmp_sudo_local"
+      else
+        sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template > "$_tmp_sudo_local"
+      fi
+      if sudo install -m 0444 -o root -g wheel "$_tmp_sudo_local" /etc/pam.d/sudo_local </dev/tty 2>/dev/null || \
+         sudo -n install -m 0444 -o root -g wheel "$_tmp_sudo_local" /etc/pam.d/sudo_local 2>/dev/null; then
+        log_success "Touch ID for sudo enabled (/etc/pam.d/sudo_local)."
+      else
+        log_warn "Skipped Touch ID for sudo (could not write /etc/pam.d/sudo_local)."
+      fi
+    else
+      log_info "Skipping Touch ID for sudo (requires admin/sudo)."
+    fi
+    unset _can_sudo_touchid _tmp_sudo_local
+  fi
+fi
+
 # --- Step 3: Homebrew Installation & Environment ---
 log_info "Step 3/9: Verifying Homebrew environment..."
 _BREW_BIN=""
-for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/bin/brew /usr/local/bin/brew; do
+for _cand in /opt/homebrew/bin/brew /usr/local/bin/brew "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew"; do
   if [[ -x "$_cand" ]]; then
     _BREW_BIN="$_cand"
     break
@@ -257,16 +299,48 @@ for _cand in "$HOME/.homebrew/bin/brew" "$HOME/homebrew/bin/brew" /opt/homebrew/
 done
 
 if [[ -z "$_BREW_BIN" ]]; then
-  log_info "Homebrew not found. Installing Homebrew directly into $HOME/.homebrew (no sudo/opt)..."
-  mkdir -p "$HOME/.homebrew"
-  curl -fsSL https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/.homebrew"
-  _BREW_BIN="$HOME/.homebrew/bin/brew"
+  _BREW_TARGET=""
+  if [[ -d "/opt/homebrew" && -w "/opt/homebrew" ]] || [[ -w "/opt" ]]; then
+    _BREW_TARGET="/opt/homebrew"
+    mkdir -p "$_BREW_TARGET"
+  elif [[ "$SILENT" -eq 1 ]] && sudo -n true 2>/dev/null; then
+    if sudo mkdir -p /opt/homebrew && sudo chown -R "$USER":admin /opt/homebrew; then
+      _BREW_TARGET="/opt/homebrew"
+    fi
+  elif [[ "$SILENT" -eq 0 && -r /dev/tty ]] && dseditgroup -o checkmember -m "$USER" admin >/dev/null 2>&1; then
+    log_info "Attempting to prepare /opt/homebrew (requires sudo for /opt; falls back to ~/.homebrew if declined)..."
+    if sudo mkdir -p /opt/homebrew </dev/tty && sudo chown -R "$USER":admin /opt/homebrew </dev/tty; then
+      _BREW_TARGET="/opt/homebrew"
+    fi
+  fi
+
+  if [[ -z "$_BREW_TARGET" ]]; then
+    _BREW_TARGET="$HOME/.homebrew"
+    mkdir -p "$_BREW_TARGET"
+    log_info "Homebrew not found and /opt is not writable. Installing Homebrew into $_BREW_TARGET..."
+  else
+    log_info "Homebrew not found. Installing Homebrew into $_BREW_TARGET..."
+  fi
+
+  curl -fsSL https://github.com/Homebrew/brew/tarball/main | tar xz --strip 1 -C "$_BREW_TARGET"
+  _BREW_BIN="$_BREW_TARGET/bin/brew"
 fi
 
 if [[ -n "$_BREW_BIN" ]]; then
+  if [[ -n "${HOMEBREW_PREFIX:-}" && ( ! -x "${HOMEBREW_PREFIX}/bin/brew" || -L "${HOMEBREW_PREFIX}" ) ]]; then
+    unset HOMEBREW_PREFIX HOMEBREW_CELLAR HOMEBREW_REPOSITORY
+  fi
   eval "$("$_BREW_BIN" shellenv)"
   export PATH="${_BREW_BIN%/brew}:$HOME/.local/bin:$PATH"
-  log_success "Homebrew active: $(command -v brew) (Prefix: $("$_BREW_BIN" --prefix))"
+  _ACTIVE_PREFIX="$("$_BREW_BIN" --prefix)"
+  if [[ "$_ACTIVE_PREFIX" == "/opt/homebrew" ]]; then
+    if [[ ! -e "$HOME/.homebrew" || -L "$HOME/.homebrew" ]]; then
+      ln -sfn /opt/homebrew "$HOME/.homebrew"
+    else
+      log_warn "Existing directory at $HOME/.homebrew left untouched; remove it to symlink $HOME/.homebrew -> /opt/homebrew."
+    fi
+  fi
+  log_success "Homebrew active: $(command -v brew) (Prefix: $_ACTIVE_PREFIX)"
 else
   log_warn "Homebrew could not be located in standard prefixes."
 fi

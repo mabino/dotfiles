@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# ~/.local/bin/migrate-homebrew-prefix
+# Idempotent entrypoint to migrate a macOS machine from ~/.homebrew to /opt/homebrew
+# with a ~/.homebrew -> /opt/homebrew convenience symlink and optional Touch ID sudo.
+#
+# Usage:
+#   yadm pull && migrate-homebrew-prefix
+#   migrate-homebrew-prefix --skip-local-agent
+#   migrate-homebrew-prefix --skip-touchid
+
+set -euo pipefail
+
+BOLD="\033[1m"
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+RESET="\033[0m"
+
+log_info()    { echo -e "${BLUE}${BOLD}==>${RESET} ${BOLD}$*${RESET}"; }
+log_success() { echo -e "${GREEN}${BOLD}✔${RESET} ${GREEN}$*${RESET}"; }
+log_warn()    { echo -e "${YELLOW}${BOLD}⚠${RESET} ${YELLOW}$*${RESET}"; }
+log_error()   { echo -e "${RED}${BOLD}✖${RESET} ${RED}$*${RESET}" >&2; }
+
+SKIP_LOCAL_AGENT=0
+SKIP_TOUCHID=0
+SKIP_PULL=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-local-agent)
+      SKIP_LOCAL_AGENT=1
+      shift
+      ;;
+    --skip-touchid)
+      SKIP_TOUCHID=1
+      shift
+      ;;
+    --skip-pull)
+      SKIP_PULL=1
+      shift
+      ;;
+    -h|--help)
+      cat <<EOF
+Usage: migrate-homebrew-prefix [OPTIONS]
+
+Migrates Homebrew from ~/.homebrew to /opt/homebrew (keeping ~/.homebrew as a
+symlink alias) and optionally enables Touch ID for sudo (/etc/pam.d/sudo_local).
+Exits immediately if the machine is already migrated.
+
+Options:
+  --skip-local-agent   Pass --skip-local-agent to bootstrap-mac
+  --skip-touchid       Skip optional Touch ID sudo configuration
+  --skip-pull          Skip 'yadm pull' before migrating
+  -h, --help           Show this help message
+EOF
+      exit 0
+      ;;
+    *)
+      log_error "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  log_error "This migration script is for macOS only."
+  exit 1
+fi
+
+touchid_enabled() {
+  grep -Eq '^[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' /etc/pam.d/sudo_local 2>/dev/null
+}
+
+configure_touchid() {
+  if [[ "$SKIP_TOUCHID" -eq 1 || ! -f "/etc/pam.d/sudo_local.template" ]]; then
+    return 0
+  fi
+  if touchid_enabled; then
+    log_success "Touch ID for sudo is already enabled (/etc/pam.d/sudo_local)."
+    return 0
+  fi
+  if ! dseditgroup -o checkmember -m "$USER" admin >/dev/null 2>&1; then
+    log_info "User $USER is not in admin group; skipping Touch ID sudo."
+    return 0
+  fi
+
+  local reply=""
+  if [[ -c /dev/tty ]]; then
+    read -r -p "$(echo -e "${BOLD}Enable optional Touch ID for sudo (/etc/pam.d/sudo_local)?${RESET} [Y/n] ")" reply </dev/tty
+  fi
+  if [[ -n "$reply" && ! "$reply" =~ ^[Yy]$ ]]; then
+    log_info "Skipping Touch ID sudo per user choice."
+    return 0
+  fi
+
+  local tmp_file
+  tmp_file="$(mktemp)"
+  trap 'rm -f "${tmp_file:-}"' RETURN
+  if [[ -f "/etc/pam.d/sudo_local" ]]; then
+    cp /etc/pam.d/sudo_local "$tmp_file"
+    printf '\nauth       sufficient     pam_tid.so\n' >> "$tmp_file"
+  else
+    sed 's/^#auth/auth/' /etc/pam.d/sudo_local.template > "$tmp_file"
+  fi
+  if sudo install -m 0444 -o root -g wheel "$tmp_file" /etc/pam.d/sudo_local </dev/tty; then
+    log_success "Touch ID for sudo enabled (/etc/pam.d/sudo_local)."
+  else
+    log_warn "Could not enable Touch ID for sudo."
+  fi
+}
+
+# --- Step 1: Pull latest dotfiles ---
+if [[ "$SKIP_PULL" -eq 0 ]] && command -v yadm >/dev/null 2>&1 && yadm rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  log_info "Step 1/4: Pulling latest yadm dotfiles..."
+  yadm pull --rebase --autostash || log_warn "yadm pull reported warnings; continuing."
+else
+  log_info "Step 1/4: Skipping yadm pull."
+fi
+
+# --- Early exit if already migrated ---
+if [[ -x "/opt/homebrew/bin/brew" && -L "$HOME/.homebrew" && "$(readlink "$HOME/.homebrew")" == "/opt/homebrew" ]]; then
+  log_success "Homebrew is already migrated to /opt/homebrew (with ~/.homebrew -> /opt/homebrew)."
+  configure_touchid
+  log_success "Machine is up to date. Nothing to migrate."
+  exit 0
+fi
+
+# --- Step 2: Configure optional Touch ID & ensure /opt/homebrew is writable BEFORE removing ~/.homebrew ---
+log_info "Step 2/4: Checking /opt/homebrew access (and optional Touch ID sudo)..."
+configure_touchid
+
+if [[ ! -d "/opt/homebrew" || ! -w "/opt/homebrew" ]]; then
+  if [[ -w "/opt" ]]; then
+    mkdir -p /opt/homebrew
+  elif dseditgroup -o checkmember -m "$USER" admin >/dev/null 2>&1; then
+    log_info "Creating /opt/homebrew owned by ${USER}:admin (requires sudo)..."
+    if ! (sudo mkdir -p /opt/homebrew </dev/tty && sudo chown -R "$USER":admin /opt/homebrew </dev/tty); then
+      log_warn "Could not prepare /opt/homebrew. Leaving existing ~/.homebrew untouched."
+      exit 0
+    fi
+  else
+    log_warn "/opt is not writable and $USER is not an admin. Keeping ~/.homebrew as-is."
+    exit 0
+  fi
+fi
+
+if [[ ! -d "/opt/homebrew" || ! -w "/opt/homebrew" ]]; then
+  log_warn "/opt/homebrew is not writable. Leaving existing ~/.homebrew untouched."
+  exit 0
+fi
+log_success "/opt/homebrew is ready and writable."
+
+# --- Step 3: Stop running Homebrew services & remove old ~/.homebrew ---
+log_info "Step 3/4: Stopping services and removing old ~/.homebrew..."
+if [[ -d "$HOME/.homebrew" && ! -L "$HOME/.homebrew" ]]; then
+  if [[ -x "$HOME/.homebrew/bin/brew" ]]; then
+    "$HOME/.homebrew/bin/brew" services stop --all 2>/dev/null || true
+  fi
+  if [[ -x "$HOME/.homebrew/bin/colima" ]]; then
+    "$HOME/.homebrew/bin/colima" stop 2>/dev/null || true
+  fi
+  # Remove stale LaunchAgents pointing to the old ~/.homebrew prefix
+  for plist in "$HOME/Library/LaunchAgents"/homebrew.mxcl.*.plist; do
+    [[ -f "$plist" ]] || continue
+    if grep -q "$HOME/.homebrew" "$plist" 2>/dev/null; then
+      launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || true
+      rm -f "$plist"
+    fi
+  done
+  rm -rf "$HOME/.homebrew"
+  log_success "Old ~/.homebrew removed."
+elif [[ -L "$HOME/.homebrew" ]]; then
+  rm -f "$HOME/.homebrew"
+fi
+
+# --- Step 4: Run bootstrap-mac to install Homebrew in /opt/homebrew, symlink ~/.homebrew, and restore Brewfile ---
+log_info "Step 4/4: Running bootstrap-mac to install into /opt/homebrew and restore ~/.Brewfile..."
+unset HOMEBREW_PREFIX HOMEBREW_CELLAR HOMEBREW_REPOSITORY
+
+declare -a BOOTSTRAP_ARGS=(--skip-xcode --skip-touchid)
+[[ "$SKIP_LOCAL_AGENT" -eq 1 ]] && BOOTSTRAP_ARGS+=(--skip-local-agent)
+
+"$HOME/.local/bin/bootstrap-mac" "${BOOTSTRAP_ARGS[@]}"
+
+# --- Final Verification ---
+echo
+log_info "Verifying migration..."
+_prefix="$(/opt/homebrew/bin/brew --prefix 2>/dev/null || true)"
+_link="$(readlink "$HOME/.homebrew" 2>/dev/null || true)"
+if [[ "$_prefix" == "/opt/homebrew" && "$_link" == "/opt/homebrew" ]]; then
+  log_success "Migration verified: prefix=$_prefix, ~/.homebrew -> $_link"
+  if command -v /opt/homebrew/bin/opencode >/dev/null 2>&1; then
+    log_success "opencode: $(/opt/homebrew/bin/opencode --version 2>/dev/null || echo installed)"
+  fi
+  touchid_enabled && log_success "Touch ID sudo: enabled" || log_info "Touch ID sudo: not enabled"
+  echo
+  log_info "Run 'exec zsh' (or open a new terminal) to reload your shell PATH."
+else
+  log_error "Verification failed: prefix='${_prefix}', ~/.homebrew link='${_link}'"
+  exit 1
+fi

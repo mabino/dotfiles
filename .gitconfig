@@ -21,7 +21,7 @@
 	conflictstyle = zdiff3
 [credential "https://github.com"]
 	helper =
-	helper = !/Users/mabino/.homebrew/bin/gh auth git-credential
+	helper = "!\"$(command -v gh || echo \"$HOME/.homebrew/bin/gh\")\" auth git-credential"
 [credential "https://gist.github.com"]
 	helper =
-	helper = !/Users/mabino/.homebrew/bin/gh auth git-credential
+	helper = "!\"$(command -v gh || echo \"$HOME/.homebrew/bin/gh\")\" auth git-credential"
